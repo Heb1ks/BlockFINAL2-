@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title GameToken - governance token for GameFi DAO
+
 contract GameToken is ERC20Votes, ERC20Permit, Ownable {
     uint256 public constant MAX_SUPPLY = 1_000_000 * 10 ** 18;
 
