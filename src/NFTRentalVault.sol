@@ -46,7 +46,7 @@ contract NFTRentalVault is ERC1155Holder, ReentrancyGuard, Ownable {
     event Delisted(uint256 indexed listingId);
 
     constructor(address _gameItems, address _gameToken, address _owner)
-        Ownable(_owner)
+    Ownable(_owner)
     {
         GAME_ITEMS = IERC1155(_gameItems);
         GAME_TOKEN = IERC20(_gameToken);
