@@ -23,18 +23,18 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
     /// @notice Authorized yield depositors (e.g. NFTRentalVault)
     mapping(address => bool) public yieldDepositors;
 
-    // ─── Events ──────────────────────────────────────────────────────────────
+    // ─── Events ─────────────────────────────────────────────────────────
     event YieldDeposited(address indexed from, uint256 amount);
     event YieldDepositorSet(address indexed depositor, bool authorized);
     event StalenessThresholdUpdated(uint256 newThreshold);
 
-    // ─── Errors ───────────────────────────────────────────────────────────────
+    // ─── Errors ─────────────────────────────────────────────────────────
     error UnauthorizedDepositor();
     error StalePriceFeed(uint256 updatedAt, uint256 currentTime);
     error InvalidPrice(int256 price);
     error IncompleteRound();
 
-    // ─── Constructor ──────────────────────────────────────────────────────────
+    // ─── Constructor ────────────────────────────────────────────────────────
     constructor(
         IERC20 _asset,
         address _priceFeed,
@@ -67,7 +67,7 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
         emit YieldDeposited(msg.sender, amount);
     }
 
-    // ─── Oracle ───────────────────────────────────────────────────────────────
+    // ─── Oracle ─────────────────────────────────────────────────────────
 
     /// @notice Update the staleness threshold (owner only)
     function setStalenessThreshold(uint256 newThreshold) external onlyOwner {
@@ -93,6 +93,7 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
             revert StalePriceFeed(timestamp, block.timestamp);
         }
         // answeredInRound < roundId means the data is from an earlier round (stale)
+        // This check ensures the oracle data is complete and from the current round
         require(answeredInRound >= roundId, "Stale answeredInRound");
 
         return (answer, timestamp);
@@ -105,7 +106,7 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
         return (totalAssets() * uint256(price)) / 1e18;
     }
 
-    // ─── ERC-4626 overrides ───────────────────────────────────────────────────
+    // ─── ERC-4626 overrides ─────────────────────────────────────────────────
 
     /// @inheritdoc ERC4626
     /// @dev OZ ERC4626 already handles CEI correctly; nonReentrant adds extra safety
