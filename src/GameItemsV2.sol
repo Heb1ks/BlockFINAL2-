@@ -2,14 +2,14 @@
 pragma solidity ^0.8.20;
 
 import "./GameItems.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 
-contract GameItemsV2 is GameItems {
+contract GameItemsV2 is GameItems, ReentrancyGuard {
     /// @custom:storage-location erc7201:gamefi.gameitems.v2
     bool public craftingEnabled;
 
     mapping(bytes32 => bool) public craftingRecipes;
-    bool private _craftingEntered;
 
     event CraftingToggled(bool enabled);
     event RecipeRegistered(uint256[] inputIds, uint256[] inputAmounts, uint256 outputId);
@@ -33,23 +33,12 @@ contract GameItemsV2 is GameItems {
         emit RecipeRegistered(inputIds, inputAmounts, outputId);
     }
 
-    /// @notice Craft items by burning inputs and minting the output
-    /// @dev Follows Checks-Effects-Interactions pattern to prevent reentrancy
-
-    modifier nonReentrantCraft() {
-        require(!_craftingEntered, "ReentrancyGuard: reentrant call");
-        _craftingEntered = true;
-        _;
-        _craftingEntered = false;
-    }
-
-
     function craft(
         uint256[] calldata inputIds,
         uint256[] calldata inputAmounts,
         uint256 outputId,
         uint256 outputAmount
-    ) external nonReentrantCraft{
+    ) external nonReentrant{
         // Checks
         require(craftingEnabled, "Crafting disabled");
         require(inputIds.length == inputAmounts.length, "Length mismatch");

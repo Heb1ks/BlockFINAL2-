@@ -100,6 +100,24 @@ contract FixedAMM {
     }
 }
 
+interface ITokenReceiverHook {
+    function onTokenTransfer() external;
+}
+
+contract HookableMockERC20 is MockERC20 {
+    constructor(string memory name_, string memory symbol_, uint8 decimals_)
+    MockERC20(name_, symbol_, decimals_)
+    {}
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        bool ok = super.transfer(to, amount);
+        if (ok && to.code.length > 0) {
+            ITokenReceiverHook(to).onTokenTransfer();
+        }
+        return ok;
+    }
+}
+
 
 contract VulnerableToken {
     mapping(address => uint256) public balanceOf;
@@ -245,7 +263,8 @@ contract SecurityCaseStudiesTest is Test {
     /// @notice Reentrant call is blocked by nonReentrant modifier.
     function test_reentrancy_AFTER_reentrant_call_reverts() public {
         tokenA = new MockERC20("TokenA", "TKA", 18);
-        tokenB = new MockERC20("TokenB", "TKB", 18);
+        HookableMockERC20 hookableTokenB = new HookableMockERC20("TokenB", "TKB", 18);
+        tokenB = MockERC20(address(hookableTokenB));
         FixedAMM famm = new FixedAMM(address(tokenA), address(tokenB));
 
         tokenA.mint(alice, 20_000e18);
@@ -387,9 +406,9 @@ contract ReentrantCaller {
         amm.swap(amount);
     }
 
-    /// @dev Receive hook that simulates a re-entrant callback
-    /// This is called when MockERC20.transfer() is called from FixedAMM.swap()
-    receive() external payable {
+    /// @dev Hook called by HookableMockERC20 during transfer.
+    function onTokenTransfer() external {
+        require(msg.sender == address(tokenB), "unexpected token");
         if (attacking) {
             attacking = false;
             // This re-entrant call must revert due to nonReentrant guard
@@ -397,16 +416,5 @@ contract ReentrantCaller {
         }
     }
 
-    /// @dev Fallback handler for any calls
-    fallback() external {
-        if (attacking) {
-            attacking = false;
-            // This re-entrant call must revert due to nonReentrant guard
-            try amm.swap(1e18) {
-                // If it didn't revert, the test will fail
-            } catch {
-                // Expected revert
-            }
-        }
-    }
+
 }
