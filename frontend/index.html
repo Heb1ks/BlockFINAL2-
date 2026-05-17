@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameFi Protocol</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Network Warning -->
+<div id="networkWarning">
+    ⚠️ Wrong network! Please switch to <strong>Arbitrum Sepolia</strong> (Chain ID: 421614)
+    <button class="btn-inline" onclick="switchNetwork()">Switch Network</button>
+</div>
+
+<!-- Header -->
+<header>
+    <h1>🎮 GameFi Protocol</h1>
+    <div class="header-right">
+        <span id="walletInfo" class="wallet-info"></span>
+        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+</header>
+
+<!-- Main Grid -->
+<div class="container">
+
+    <!-- Wallet Stats -->
+    <div class="card">
+        <h2>👤 Your Wallet</h2>
+        <div class="stat-row"><span class="label">GAME Balance</span><span class="value" id="gameBalance">—</span></div>
+        <div class="stat-row"><span class="label">Voting Power</span><span class="value" id="votingPower">—</span></div>
+        <div class="stat-row"><span class="label">Delegated To</span><span class="value" id="delegate">—</span></div>
+        <div class="stat-row"><span class="label">Vault Shares (sGAME)</span><span class="value" id="vaultShares">—</span></div>
+        <div class="stat-row"><span class="label">LP Tokens (GLP)</span><span class="value" id="lpBalance">—</span></div>
+        <div class="stat-row"><span class="label">Pool Reserve GAME</span><span class="value" id="reserveA">—</span></div>
+        <div class="stat-row"><span class="label">Pool Reserve RES</span><span class="value" id="reserveB">—</span></div>
+    </div>
+
+    <!-- Swap -->
+    <div class="card">
+        <h2>🔄 Swap (AMM)</h2>
+        <div class="tab-bar">
+            <button class="tab active" id="tabAtoB" onclick="setSwapDir(true)">GAME → RES</button>
+            <button class="tab" id="tabBtoA" onclick="setSwapDir(false)">RES → GAME</button>
+        </div>
+        <label class="input-label">Amount In</label>
+        <input id="swapAmount" type="number" placeholder="e.g. 100" />
+        <label class="input-label">Min Amount Out <span class="hint">(0 = no slippage limit)</span></label>
+        <input id="swapMinOut" type="number" placeholder="0" value="0" />
+        <button class="btn btn-purple" onclick="doSwap()">Swap</button>
+        <div id="swapStatus" class="tx-status"></div>
+    </div>
+
+    <!-- Vault -->
+    <div class="card">
+        <h2>🏦 Vault (ERC-4626)</h2>
+        <div class="stat-row"><span class="label">Total Assets</span><span class="value" id="vaultAssets">—</span></div>
+        <div class="stat-row"><span class="label">Total Shares</span><span class="value" id="vaultTotalShares">—</span></div>
+
+        <div class="divider"></div>
+
+        <label class="input-label">GAME to Deposit</label>
+        <input id="depositAmount" type="number" placeholder="e.g. 500" />
+        <button class="btn btn-green" onclick="doDeposit()">Deposit to Vault</button>
+        <div id="depositStatus" class="tx-status"></div>
+
+        <div class="divider"></div>
+
+        <label class="input-label">Shares to Redeem</label>
+        <input id="withdrawShares" type="number" placeholder="e.g. 100" />
+        <button class="btn btn-blue" onclick="doRedeem()">Redeem Shares</button>
+        <div id="redeemStatus" class="tx-status"></div>
+    </div>
+
+    <!-- Delegate -->
+    <div class="card">
+        <h2>🗳️ Delegate Votes</h2>
+        <p class="hint-text">Delegate your voting power to participate in governance. Leave empty to delegate to yourself.</p>
+        <label class="input-label">Delegate Address</label>
+        <input id="delegateAddr" type="text" placeholder="0x... (leave empty = self)" />
+        <button class="btn btn-purple" onclick="doDelegate()">Delegate</button>
+        <div id="delegateStatus" class="tx-status"></div>
+    </div>
+
+    <!-- Proposals (full width) -->
+    <div class="card full-width">
+        <h2>
+            📋 DAO Proposals
+            <span class="subgraph-badge">from The Graph</span>
+        </h2>
+        <div id="proposalsList" class="empty-state">Connect wallet to load proposals...</div>
+    </div>
+
+    <!-- Recent Swaps (full width) -->
+    <div class="card full-width">
+        <h2>
+            📊 Recent Swaps
+            <span class="subgraph-badge">from The Graph</span>
+        </h2>
+        <div id="swapHistory" class="empty-state">Connecting to subgraph...</div>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
