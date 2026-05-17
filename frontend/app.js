@@ -1,17 +1,16 @@
-// ─── Config ────────────────────────────────────────────────────────────────
 const ADDRESSES = {
-    gameToken:  "0x4b733e9e1328F5b7FE865cA87cb073f98A12195f",
-    gameAMM:    "0x36E6D1a755c9b81c24C138f4c3FbaCeBe2AbEdB5",
-    gameVault:  "0x642F030B5aB0a6d8Bcf6700f328bbD82DD8F821f",
-    gameDAO:    "0x27344475649463373e1205A122E33536c34AF8cD",
+    gameToken:  "0x407a5Da64E3fc9FF202b76355d0FC0F34390c41A",
+    gameAMM:    "0xFf494842f23dbad3b478CDe35486e101cD880AF9",
+    gameVault:  "0xCB082d44E32f27D30C54c28F947A8C54fDFb6de8",
+    gameDAO:    "0xCb0aD118Fc15313305d138097A2E6AE21706A59C",
 }
 
-// TODO: Replace with your subgraph URL after deploying to The Graph Studio
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.3"
+// do not forget
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.5"
 
 const ARBITRUM_SEPOLIA_CHAIN_ID = 421614n
 
-// ─── ABIs (minimal — only what the frontend needs) ──────────────────────────
+
 const ERC20_ABI = [
     "function balanceOf(address) view returns (uint256)",
     "function approve(address spender, uint256 amount) returns (bool)",
@@ -40,8 +39,12 @@ const VAULT_ABI = [
     "function totalAssets() view returns (uint256)",
     "function totalSupply() view returns (uint256)",
 ]
+const DAO_ABI = [
+    "function castVote(uint256 proposalId, uint8 support) returns (uint256)",
+    "function hasVoted(uint256 proposalId, address account) view returns (bool)",
+]
 
-// ─── State ──────────────────────────────────────────────────────────────────
+
 let provider = null
 let signer   = null
 let userAddress = null
@@ -75,6 +78,7 @@ async function connectWallet() {
         contracts.token = new ethers.Contract(ADDRESSES.gameToken, VOTES_ABI, signer)
         contracts.amm   = new ethers.Contract(ADDRESSES.gameAMM,   AMM_ABI,   signer)
         contracts.vault = new ethers.Contract(ADDRESSES.gameVault, VAULT_ABI, signer)
+        contracts.dao   = new ethers.Contract(ADDRESSES.gameDAO,   DAO_ABI,   signer)
 
         // Load data
         await refreshStats()
@@ -395,6 +399,14 @@ async function loadProposals() {
           <span>❌ Against: ${fmtVotes(p.againstVotes)}</span>
           <span>⬜ Abstain: ${fmtVotes(p.abstainVotes)}</span>
         </div>
+        ${p.state === 'Active' ? `
+        <div class="vote-buttons">
+          <button class="btn-vote btn-for"     onclick="castVote('${p.proposalId}', 1)">✅ Vote For</button>
+          <button class="btn-vote btn-against" onclick="castVote('${p.proposalId}', 0)">❌ Vote Against</button>
+          <button class="btn-vote btn-abstain" onclick="castVote('${p.proposalId}', 2)">⬜ Abstain</button>
+        </div>
+        <div id="voteStatus-${p.proposalId}" class="tx-status"></div>
+        ` : ''}
       </div>
     `
     }).join("")

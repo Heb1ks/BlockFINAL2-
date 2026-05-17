@@ -7,7 +7,7 @@ dataSources:
     name: GameToken
     network: arbitrum-sepolia
     source:
-      address: "0x4b733e9e1328F5b7FE865cA87cb073f98A12195f"
+      address: "0x407a5Da64E3fc9FF202b76355d0FC0F34390c41A"
       abi: GameToken
       startBlock: 265000000
     mapping:
@@ -29,7 +29,7 @@ dataSources:
     name: GameAMM
     network: arbitrum-sepolia
     source:
-      address: "0x36E6D1a755c9b81c24C138f4c3FbaCeBe2AbEdB5"
+      address: "0xFf494842f23dbad3b478CDe35486e101cD880AF9"
       abi: GameAMM
       startBlock: 265000000
     mapping:
@@ -57,7 +57,7 @@ dataSources:
     name: NFTRentalVault
     network: arbitrum-sepolia
     source:
-      address: "0x3A05363578B06a92fCFa7A2C8C57684f72F89B5c"
+      address: "0x476016df3bE27D697aB1494922Ac5352B936BcbF"
       abi: NFTRentalVault
       startBlock: 265000000
     mapping:
@@ -86,7 +86,7 @@ dataSources:
     name: GameDAO
     network: arbitrum-sepolia
     source:
-      address: "0x27344475649463373e1205A122E33536c34AF8cD"
+      address: "0xCb0aD118Fc15313305d138097A2E6AE21706A59C"
       abi: GameDAO
       startBlock: 265000000
     mapping:
@@ -117,7 +117,7 @@ dataSources:
     name: LootDrop
     network: arbitrum-sepolia
     source:
-      address: "0x38Fd68F4b1DF77937a05F268952f885Bf73dE97E"
+      address: "0xD1d24f55107c7ee9FDE319502d8Bca9fe1bB288c"
       abi: LootDrop
       startBlock: 265000000
     mapping:
