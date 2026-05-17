@@ -33,7 +33,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         TOKEN_B = IERC20(_tokenB);
     }
 
-    // ─── Liquidity ────────────────────────────────────────────────────────────
+    // ─── Liquidity ────────────────────────────────────────────────────────
 
     function addLiquidity(uint256 amountA, uint256 amountB)
     external
@@ -48,13 +48,17 @@ contract GameAMM is ERC20, ReentrancyGuard {
         TOKEN_A.safeTransferFrom(msg.sender, address(this), amountA);
         TOKEN_B.safeTransferFrom(msg.sender, address(this), amountB);
 
-        if (totalSupply() == 0) {
+        uint256 supply = totalSupply();
+        
+        if (supply <= 0) {
             // Yul sqrt — ~26% cheaper than Solidity equivalent (see benchmark above)
+            // First liquidity provider: mint shares based on geometric mean
             shares = _sqrtYul(amountA * amountB);
         } else {
+            // Subsequent liquidity providers: mint based on proportional contribution
             shares = _min(
-                (amountA * totalSupply()) / reserveA,
-                (amountB * totalSupply()) / reserveB
+                (amountA * supply) / reserveA,
+                (amountB * supply) / reserveB
             );
         }
 
@@ -81,7 +85,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         emit LiquidityRemoved(msg.sender, amountA, amountB, shares);
     }
 
-    // ─── Swaps ────────────────────────────────────────────────────────────────
+    // ─── Swaps ──────────────────────────────────────────────────────────
 
     function swapAtoB(uint256 amountIn, uint256 minAmountOut)
     external
@@ -117,7 +121,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         emit Swap(msg.sender, amountIn, amountOut, false);
     }
 
-    // ─── View ─────────────────────────────────────────────────────────────────
+    // ─── View ───────────────────────────────────────────────────────────
 
     function getReserves() external view returns (uint256 rA, uint256 rB) {
         rA = TOKEN_A.balanceOf(address(this));
