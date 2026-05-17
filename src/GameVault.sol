@@ -7,10 +7,6 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/AggregatorV3Interface.sol";
 
-/// @title GameVault — ERC-4626 tokenized yield vault for GAME tokens
-/// @notice Players deposit GAME tokens and earn yield from protocol fees.
-///         Share price automatically increases as fees are forwarded to this vault.
-///         Chainlink price feed provides on-chain USD valuation.
 contract GameVault is ERC4626, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -82,13 +78,13 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
         (
             uint80 roundId,
             int256 answer,
-            ,
+            uint256 startedAt,
             uint256 timestamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
         if (answer <= 0) revert InvalidPrice(answer);
-        if (timestamp == 0) revert IncompleteRound();
+        if (startedAt == 0 || timestamp == 0) revert IncompleteRound();
         if (block.timestamp - timestamp > stalenessThreshold) {
             revert StalePriceFeed(timestamp, block.timestamp);
         }

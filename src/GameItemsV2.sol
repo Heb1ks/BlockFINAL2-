@@ -3,20 +3,13 @@ pragma solidity ^0.8.20;
 
 import "./GameItems.sol";
 
-/// @title GameItemsV2 — UUPS upgrade of GameItems adding on-chain crafting
-/// @notice V1 → V2 upgrade path:
-///   1. Deploy GameItemsV2 implementation
-///   2. Call upgradeToAndCall(address(v2), "") from UPGRADER_ROLE via Timelock
-///   3. New `craft()` function becomes available; all V1 state is preserved
-///      because storage layout is append-only (new vars added at the end).
-/// @dev Storage layout — V1 slots are untouched:
-///   [OZ ERC1155 slots]  [OZ AccessControl slots]  [OZ UUPS slots]
-///   V2 appends: craftingEnabled (bool) at the next free slot.
+
 contract GameItemsV2 is GameItems {
     /// @custom:storage-location erc7201:gamefi.gameitems.v2
     bool public craftingEnabled;
 
-    mapping(bytes32 => bool) public craftingRecipes; // keccak(inputs) => valid
+    mapping(bytes32 => bool) public craftingRecipes;
+    bool private _craftingEntered;
 
     event CraftingToggled(bool enabled);
     event RecipeRegistered(uint256[] inputIds, uint256[] inputAmounts, uint256 outputId);
@@ -42,12 +35,21 @@ contract GameItemsV2 is GameItems {
 
     /// @notice Craft items by burning inputs and minting the output
     /// @dev Follows Checks-Effects-Interactions pattern to prevent reentrancy
+
+    modifier nonReentrantCraft() {
+        require(!_craftingEntered, "ReentrancyGuard: reentrant call");
+        _craftingEntered = true;
+        _;
+        _craftingEntered = false;
+    }
+
+
     function craft(
         uint256[] calldata inputIds,
         uint256[] calldata inputAmounts,
         uint256 outputId,
         uint256 outputAmount
-    ) external {
+    ) external nonReentrantCraft{
         // Checks
         require(craftingEnabled, "Crafting disabled");
         require(inputIds.length == inputAmounts.length, "Length mismatch");
