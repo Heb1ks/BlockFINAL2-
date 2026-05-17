@@ -5,6 +5,7 @@ import "./GameItems.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 
+
 contract GameItemsV2 is GameItems, ReentrancyGuard {
     /// @custom:storage-location erc7201:gamefi.gameitems.v2
     bool public craftingEnabled;
@@ -15,13 +16,13 @@ contract GameItemsV2 is GameItems, ReentrancyGuard {
     event RecipeRegistered(uint256[] inputIds, uint256[] inputAmounts, uint256 outputId);
     event ItemCrafted(address indexed player, uint256 outputId, uint256 amount);
 
-    /// @notice Toggle crafting on/off — callable by admin via governance
+    // ─── Admin ───────────────────────────────────────────────────────────────
+
     function setCraftingEnabled(bool enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
         craftingEnabled = enabled;
         emit CraftingToggled(enabled);
     }
 
-    /// @notice Register a crafting recipe
     function registerRecipe(
         uint256[] calldata inputIds,
         uint256[] calldata inputAmounts,
@@ -33,28 +34,63 @@ contract GameItemsV2 is GameItems, ReentrancyGuard {
         emit RecipeRegistered(inputIds, inputAmounts, outputId);
     }
 
+    // ─── Crafting ────────────────────────────────────────────────────────────
+
     function craft(
         uint256[] calldata inputIds,
         uint256[] calldata inputAmounts,
         uint256 outputId,
         uint256 outputAmount
-    ) external nonReentrant{
-        // Checks
+    ) external nonReentrant {
         require(craftingEnabled, "Crafting disabled");
         require(inputIds.length == inputAmounts.length, "Length mismatch");
 
         bytes32 key = keccak256(abi.encode(inputIds, inputAmounts, outputId));
         require(craftingRecipes[key], "Invalid recipe");
 
-        // Effects (state changes before interactions)
-        // Note: _burnBatch and _mint are internal state-changing operations
-        // Burn inputs first
         _burnBatch(msg.sender, inputIds, inputAmounts);
-
-        // Then mint output
         _mint(msg.sender, outputId, outputAmount, "");
-        
-        // Interactions & Events (after all state changes)
+
         emit ItemCrafted(msg.sender, outputId, outputAmount);
+    }
+
+
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 value,
+        bytes memory data
+    ) public override nonReentrant {
+        super.safeTransferFrom(from, to, id, value, data);
+    }
+
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values,
+        bytes memory data
+    ) public override nonReentrant {
+        super.safeBatchTransferFrom(from, to, ids, values, data);
+    }
+
+    function mint(address to, uint256 id, uint256 amount)
+    external
+    override
+    onlyRole(MINTER_ROLE)
+    nonReentrant
+    {
+        _mint(to, id, amount, "");
+    }
+
+    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts)
+    external
+    override
+    onlyRole(MINTER_ROLE)
+    nonReentrant
+    {
+        _mintBatch(to, ids, amounts, "");
     }
 }
