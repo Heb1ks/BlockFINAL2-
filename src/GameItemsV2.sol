@@ -41,23 +41,29 @@ contract GameItemsV2 is GameItems {
     }
 
     /// @notice Craft items by burning inputs and minting the output
+    /// @dev Follows Checks-Effects-Interactions pattern to prevent reentrancy
     function craft(
         uint256[] calldata inputIds,
         uint256[] calldata inputAmounts,
         uint256 outputId,
         uint256 outputAmount
     ) external {
+        // Checks
         require(craftingEnabled, "Crafting disabled");
         require(inputIds.length == inputAmounts.length, "Length mismatch");
 
         bytes32 key = keccak256(abi.encode(inputIds, inputAmounts, outputId));
         require(craftingRecipes[key], "Invalid recipe");
 
-        // Burn inputs (CEI: checks done, effects = burn)
+        // Effects (state changes before interactions)
+        // Note: _burnBatch and _mint are internal state-changing operations
+        // Burn inputs first
         _burnBatch(msg.sender, inputIds, inputAmounts);
 
-        // Mint output
+        // Then mint output
         _mint(msg.sender, outputId, outputAmount, "");
+        
+        // Interactions & Events (after all state changes)
         emit ItemCrafted(msg.sender, outputId, outputAmount);
     }
 }
