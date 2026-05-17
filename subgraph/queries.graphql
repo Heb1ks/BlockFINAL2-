@@ -1,0 +1,83 @@
+# ─── 5 документированных GraphQL запросов ────────────────────────────────────
+
+# Query 1: Последние 10 свапов
+query RecentSwaps {
+  swaps(first: 10, orderBy: timestamp, orderDirection: desc) {
+    id
+    user
+    amountIn
+    amountOut
+    aToB
+    timestamp
+    transactionHash
+  }
+}
+
+# Query 2: Активные листинги NFT аренды
+query ActiveListings {
+  listings(where: { active: true }, orderBy: createdAt, orderDirection: desc) {
+    id
+    owner
+    itemId
+    amount
+    pricePerDay
+    createdAt
+    rentals {
+      renter
+      endTime
+      active
+    }
+  }
+}
+
+# Query 3: Все proposals с результатами голосования
+query AllProposals {
+  proposals(orderBy: createdAt, orderDirection: desc) {
+    id
+    proposalId
+    proposer
+    description
+    state
+    forVotes
+    againstVotes
+    abstainVotes
+    createdAt
+    votes {
+      voter
+      support
+      weight
+    }
+  }
+}
+
+# Query 4: Статистика пула AMM
+query PoolStats {
+  ammPools {
+    id
+    totalVolumeA
+    totalVolumeB
+    swapCount
+    liquidityProviderCount
+  }
+  swaps(first: 5, orderBy: timestamp, orderDirection: desc) {
+    amountIn
+    amountOut
+    aToB
+    timestamp
+  }
+}
+
+# Query 5: История лут дропов игрока
+query PlayerLootHistory($player: Bytes!) {
+  lootRequests(
+    where: { player: $player }
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    requestId
+    fulfilled
+    itemId
+    timestamp
+    transactionHash
+  }
+}
