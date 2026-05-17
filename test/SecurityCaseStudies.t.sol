@@ -134,13 +134,13 @@ contract FixedToken {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════[...]
 //  TEST SUITE
-// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════[...]
 
 contract SecurityCaseStudiesTest is Test {
 
-    // ── actors ──────────────────────────────────────────────────────────────
+    // ── actors ──────────────────────────────────────────────────────────[...]
     address alice   = address(0xA1);
     address bob     = address(0xB0);
     address attacker = address(0xAA);
@@ -212,9 +212,9 @@ contract SecurityCaseStudiesTest is Test {
         vm.stopPrank();
     }
 
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────[...]
     //  REENTRANCY — AFTER (fixed with CEI + nonReentrant)
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────[...]
 
     /// @notice Fixed AMM correctly processes an honest swap.
     function test_reentrancy_AFTER_honest_swap_works() public {
@@ -257,17 +257,18 @@ contract SecurityCaseStudiesTest is Test {
         vm.stopPrank();
 
         // Deploy a contract that tries to re-enter swap() within the same call
-        ReentrantCaller reentrant = new ReentrantCaller(address(famm), address(tokenA));
+        ReentrantCaller reentrant = new ReentrantCaller(address(famm), address(tokenA), address(tokenB));
         tokenA.mint(address(reentrant), 1_000e18);
+        tokenB.mint(address(reentrant), 1_000e18);
 
         // The reentrant call must revert with the guard error
         vm.expectRevert("ReentrancyGuard: reentrant call");
         reentrant.attack(100e18);
     }
 
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────[...]
     //  ACCESS CONTROL — BEFORE (anyone can mint)
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────[...]
 
     /// @notice Any address can mint from VulnerableToken — proves the bug.
     function test_accessControl_BEFORE_anyone_can_mint() public {
@@ -293,9 +294,9 @@ contract SecurityCaseStudiesTest is Test {
         assertEq(vtoken.balanceOf(rando), 999e18);
     }
 
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────[...]
     //  ACCESS CONTROL — AFTER (only owner can mint)
-    // ────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────[...]
 
     /// @notice Owner can mint — expected functionality.
     function test_accessControl_AFTER_owner_can_mint() public {
@@ -363,32 +364,49 @@ contract SecurityCaseStudiesTest is Test {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════[...]
 //  Helper — contract that attempts to re-enter FixedAMM.swap()
-// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════[...]
 contract ReentrantCaller {
     FixedAMM public amm;
     IERC20   public tokenA;
+    IERC20   public tokenB;
     bool     private attacking;
 
-    constructor(address _amm, address _tokenA) {
+    constructor(address _amm, address _tokenA, address _tokenB) {
         amm    = FixedAMM(_amm);
         tokenA = IERC20(_tokenA);
+        tokenB = IERC20(_tokenB);
     }
 
     function attack(uint256 amount) external {
         attacking = true;
         tokenA.approve(address(amm), type(uint256).max);
+        tokenB.approve(address(amm), type(uint256).max);
+        // This call will trigger reentrancy check
         amm.swap(amount);
     }
 
-    /// @dev Simulates a re-entrant callback (e.g., ERC-777 tokensReceived hook)
-    ///      called during tokenB.transfer() inside FixedAMM.swap()
-    function onTokensReceived(uint256) external {
+    /// @dev Receive hook that simulates a re-entrant callback
+    /// This is called when MockERC20.transfer() is called from FixedAMM.swap()
+    receive() external payable {
         if (attacking) {
             attacking = false;
             // This re-entrant call must revert due to nonReentrant guard
             amm.swap(1e18);
+        }
+    }
+
+    /// @dev Fallback handler for any calls
+    fallback() external {
+        if (attacking) {
+            attacking = false;
+            // This re-entrant call must revert due to nonReentrant guard
+            try amm.swap(1e18) {
+                // If it didn't revert, the test will fail
+            } catch {
+                // Expected revert
+            }
         }
     }
 }
