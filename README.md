@@ -1,91 +1,162 @@
-# GameFi Economy Protocol
+# GameFi Protocol — Option B: GameFi Economy
 
-Blockchain Technologies 2 — Final Project (Option B)
-
-A full-stack decentralized GameFi protocol featuring an ERC-1155 in-game item economy with crafting, a constant-product AMM for fungible resources, an NFT rental vault, Chainlink VRF loot drops, and DAO governance — deployed on Arbitrum Sepolia.
-
-## Team
-
-| Name | Area of ownership |
-|---|---|
-| Eskender Rymbaev | Frontend, subgraph, deployment & DevOps |
-| Nazerke Kaliyeva | Governance (GameDAO, GameToken), security audit |
-| Diar Gizatov | Smart contracts (GameAMM, GameVault, GameFactory), testing|
+A production-grade decentralized GameFi infrastructure built on Arbitrum Sepolia.  
+This protocol provides the complete on-chain economic layer for a blockchain game:
+in-game currency, NFT items, a decentralized exchange, NFT rental, random loot drops,
+yield vaults, and DAO governance — all deployed and verified on L2.
 
 ---
 
-## Deployed Contracts — Arbitrum Sepolia
+## Table of Contents
 
-| Contract | Address |
-|---|---|
-| GameToken (ERC-20 / governance) | [0x407a5Da64E3fc9FF202b76355d0FC0F34390c41A](https://sepolia.arbiscan.io/address/0x407a5Da64E3fc9FF202b76355d0FC0F34390c41A) |
-| GameItems proxy (ERC-1155 UUPS) | [0xd38cA79ADFc7300A95adaAc16A5F543c205eBf64](https://sepolia.arbiscan.io/address/0xd38cA79ADFc7300A95adaAc16A5F543c205eBf64) |
-| GameFactory | [0x545901c94Ce4bCB7960CeCB69C8b3C505Fcdd836](https://sepolia.arbiscan.io/address/0x545901c94Ce4bCB7960CeCB69C8b3C505Fcdd836) |
-| TimelockController (2-day delay) | [0x1ABA8B2a61196EDDd50C4456733D63Ff5f6139e0](https://sepolia.arbiscan.io/address/0x1ABA8B2a61196EDDd50C4456733D63Ff5f6139e0) |
-| GameDAO (Governor) | [0xCb0aD118Fc15313305d138097A2E6AE21706A59C](https://sepolia.arbiscan.io/address/0xCb0aD118Fc15313305d138097A2E6AE21706A59C) |
-| GameAMM (x·y=k, 0.3% fee) | [0xFf494842f23dbad3b478CDe35486e101cD880AF9](https://sepolia.arbiscan.io/address/0xFf494842f23dbad3b478CDe35486e101cD880AF9) |
-| GameVault (ERC-4626) | [0xCB082d44E32f27D30C54c28F947A8C54fDFb6de8](https://sepolia.arbiscan.io/address/0xCB082d44E32f27D30C54c28F947A8C54fDFb6de8) |
-| NFTRentalVault | [0x476016df3bE27D697aB1494922Ac5352B936BcbF](https://sepolia.arbiscan.io/address/0x476016df3bE27D697aB1494922Ac5352B936BcbF) |
-| LootDrop (Chainlink VRF) | [0xD1d24f55107c7ee9FDE319502d8Bca9fe1bB288c](https://sepolia.arbiscan.io/address/0xD1d24f55107c7ee9FDE319502d8Bca9fe1bB288c) |
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Contracts](#contracts)
+- [Deployed Addresses](#deployed-addresses)
+- [Technical Requirements](#technical-requirements)
+- [Getting Started](#getting-started)
+- [Running Tests](#running-tests)
+- [Deployment](#deployment)
+- [Security](#security)
 
 ---
 
-## The Graph Subgraph
+## Overview
 
-- **Endpoint (HTTP):** `https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.5`
-- **Entities:** TokenTransfer, Swap, LiquidityEvent, AMMPool, Listing, Rental, Proposal, Vote, LootRequest, VaultDeposit
-- **Documented queries:** `subgraph/queries.graphql`
+GameFi Protocol is a full-stack decentralized protocol that implements the economic
+backbone of a blockchain game. Players can:
+
+- **Trade** in-game resources on a decentralized AMM exchange
+- **Rent** NFT items from other players and earn passive income
+- **Earn yield** by staking the governance token in the ERC-4626 vault
+- **Receive random loot drops** powered by Chainlink VRF
+- **Govern** the protocol — vote on drop rates, crafting costs, and economic parameters
+
+The protocol is governed by a DAO where token holders vote on all parameter changes.
+All admin power is controlled by a 2-day Timelock, eliminating single points of failure.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Frontend (app.js)                 │
-│          MetaMask · Ethers.js · The Graph            │
-└──────────┬──────────────────────────────────────────┘
-           │
-┌──────────▼──────────────────────────────────────────┐
-│                 Arbitrum Sepolia L2                  │
-│                                                      │
-│  GameToken (ERC20Votes+Permit)                       │
-│       │                                              │
-│  GameDAO ──► TimelockController                      │
-│       │           │ controls                         │
-│  GameFactory      ▼                                  │
-│  ├── GameItems (UUPS proxy, ERC-1155)                │
-│  │       └── GameItemsV2 (+ crafting)                │
-│  └── GameAMM (x·y=k, LP tokens)                     │
-│                                                      │
-│  GameVault (ERC-4626) ◄── Chainlink price feed       │
-│  NFTRentalVault (ERC-1155 rentals)                   │
-│  LootDrop ◄── Chainlink VRF                          │
-└─────────────────────────────────────────────────────┘
-           │
-┌──────────▼──────────────────────────────────────────┐
-│              The Graph (subgraph)                    │
-│   indexes: Swap, Proposal, Listing, LootRequest…    │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        GameFi Protocol                          │
+│                                                                 │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐  │
+│  │  GameToken   │    │  GameItems   │    │    GameVault     │  │
+│  │  ERC20Votes  │    │  ERC-1155    │    │    ERC-4626      │  │
+│  │  ERC20Permit │    │  UUPS Proxy  │    │  Chainlink Feed  │  │
+│  └──────┬───────┘    └──────┬───────┘    └────────┬─────────┘  │
+│         │                  │                      │             │
+│  ┌──────▼───────┐    ┌──────▼───────┐    ┌────────▼─────────┐  │
+│  │   GameDAO    │    │  NFTRental   │    │     GameAMM      │  │
+│  │  Governor    │    │    Vault     │    │   x*y=k + Yul    │  │
+│  │  Timelock    │    │              │    │    LP tokens     │  │
+│  └──────────────┘    └──────────────┘    └──────────────────┘  │
+│                                                                 │
+│  ┌──────────────┐    ┌──────────────┐                          │
+│  │  LootDrop    │    │ GameFactory  │                          │
+│  │ Chainlink VRF│    │CREATE+CREATE2│                          │
+│  └──────────────┘    └──────────────┘                          │
+│                                                                 │
+│  External: Chainlink VRF · Chainlink Price Feed · The Graph    │
+│  Network:  Arbitrum Sepolia (L2)                               │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+### Key Design Decisions
+
+- **UUPS Proxy** on GameItems enables upgrades without redeploying (V1 → V2 with crafting)
+- **Inline Yul assembly** in GameAMM for `_sqrtYul` (~26% gas saving) and `_getAmountOutYul` (~18% saving)
+- **ERC-4626 vault** collects protocol fees from NFTRentalVault and distributes yield to stakers
+- **2-day Timelock** controls all admin functions — no instant changes possible
+- **Chainlink VRF** ensures provably fair loot drops (cannot be manipulated)
+- **Chainlink Price Feed** with staleness check in GameVault for USD valuation
 
 ---
 
-## Protocol Overview
+## Contracts
 
-### Option B — GameFi Economy
+| Contract | Description | Standard |
+|---|---|---|
+| `GameToken` | In-game currency and governance token | ERC-20 + ERC20Votes + ERC20Permit |
+| `GameItems` | In-game NFT items (Sword, Shield, Potion, Armor, Magic Orb) | ERC-1155 + UUPS |
+| `GameItemsV2` | Upgraded version with on-chain crafting system | ERC-1155 + UUPS |
+| `GameAMM` | Constant-product AMM (x·y=k) with 0.3% fee and LP tokens | Custom + Yul |
+| `GameVault` | Yield vault for GAME stakers; fees from rental flow here | ERC-4626 |
+| `NFTRentalVault` | List, rent, and return NFT items; platform fees → GameVault | Custom |
+| `LootDrop` | Request random loot via Chainlink VRF; 50% drop rate by default | VRFConsumerBaseV2 |
+| `GameDAO` | On-chain governance: propose, vote, queue, execute | OZ Governor |
+| `TimelockController` | 2-day delay on all governance actions | OZ Timelock |
+| `GameFactory` | Deploys GameItems and GameAMM instances via CREATE and CREATE2 | Custom |
 
-| Component | Description |
+---
+
+## Deployed Addresses
+
+**Network: Arbitrum Sepolia (Chain ID: 421614)**
+
+| Contract | Address |
 |---|---|
-| **GameItems** | Upgradeable ERC-1155 with MINTER_ROLE gating. V2 adds on-chain crafting (burn inputs → mint output). |
-| **GameAMM** | Constant-product AMM (x·y=k) for fungible game resources. 0.3% fee, slippage protection, LP tokens. Contains inline Yul assembly (~22–26% gas saving over Solidity equivalent). |
-| **GameVault** | ERC-4626 tokenized yield vault. Depositors earn yield from protocol fees. Chainlink price feed with staleness check provides USD valuation. |
-| **NFTRentalVault** | List ERC-1155 items for rent. Renter pays GAME tokens per day; platform takes 5% fee. |
-| **LootDrop** | Chainlink VRF v2 loot drops. Drop rate is DAO-governed. |
-| **GameToken** | ERC20Votes + ERC20Permit. Governance token. Timestamp-based clock (EIP-6372). |
-| **GameDAO** | Full OpenZeppelin Governor stack. Voting delay 1 day, voting period 1 week, quorum 4%, proposal threshold 1%. |
-| **TimelockController** | 2-day delay. Controls treasury and privileged protocol parameters. |
-| **GameFactory** | Deploys GameItems (CREATE) and GameAMM (CREATE) instances. Supports deterministic deployment via CREATE2 with salt. |
+| GameToken | [`0x4b733e9e1328F5b7FE865cA87cb073f98A12195f`](https://sepolia.arbiscan.io/address/0x4b733e9e1328F5b7FE865cA87cb073f98A12195f) |
+| GameItems (proxy) | [`0xE0fEE3E2080787500889c75dEAaB13863D521C67`](https://sepolia.arbiscan.io/address/0xE0fEE3E2080787500889c75dEAaB13863D521C67) |
+| GameItems (impl) | [`0xAe867dF3d109e54FC5E56b5a89661F353CcC9C46`](https://sepolia.arbiscan.io/address/0xAe867dF3d109e54FC5E56b5a89661F353CcC9C46) |
+| GameFactory | [`0x4B3b639da23fd9765A106E45a02f6C4F9C86d9fF`](https://sepolia.arbiscan.io/address/0x4B3b639da23fd9765A106E45a02f6C4F9C86d9fF) |
+| TimelockController | [`0x7972D6A33163C5299DDC8cD70E3Bf27bc066ad02`](https://sepolia.arbiscan.io/address/0x7972D6A33163C5299DDC8cD70E3Bf27bc066ad02) |
+| GameDAO | [`0x27344475649463373e1205A122E33536c34AF8cD`](https://sepolia.arbiscan.io/address/0x27344475649463373e1205A122E33536c34AF8cD) |
+| GameAMM | [`0x36E6D1a755c9b81c24C138f4c3FbaCeBe2AbEdB5`](https://sepolia.arbiscan.io/address/0x36E6D1a755c9b81c24C138f4c3FbaCeBe2AbEdB5) |
+| GameVault | [`0x642F030B5aB0a6d8Bcf6700f328bbD82DD8F821f`](https://sepolia.arbiscan.io/address/0x642F030B5aB0a6d8Bcf6700f328bbD82DD8F821f) |
+| NFTRentalVault | [`0x3A05363578B06a92fCFa7A2C8C57684f72F89B5c`](https://sepolia.arbiscan.io/address/0x3A05363578B06a92fCFa7A2C8C57684f72F89B5c) |
+| LootDrop | [`0x38Fd68F4b1DF77937a05F268952f885Bf73dE97E`](https://sepolia.arbiscan.io/address/0x38Fd68F4b1DF77937a05F268952f885Bf73dE97E) |
+
+All contracts are **verified** on [Arbiscan](https://sepolia.arbiscan.io).
+
+---
+
+## Technical Requirements
+
+### Smart Contracts 
+- **UUPS Proxy** — GameItems with documented V1 → V2 upgrade path (crafting system)
+- **Factory** — GameFactory using both `CREATE` and `CREATE2` with address prediction
+- **Inline Yul Assembly** — GameAMM `_sqrtYul` (26% cheaper) and `_getAmountOutYul` (18% cheaper)
+- **ERC-20** — GameToken with ERC20Votes + ERC20Permit
+- **ERC-1155** — GameItems (upgradeable)
+- **ERC-4626** — GameVault with full rounding invariant compliance
+- **AMM** — Constant-product x·y=k with 0.3% fee, slippage protection, LP tokens (built from scratch)
+- **Chainlink Price Feed** — GameVault with staleness check (reverts if price older than 1 hour)
+- **Chainlink VRF** — LootDrop with mock coordinator for tests
+- **Governance** — Full OZ Governor stack: 1-day delay, 1-week period, 4% quorum, 1% threshold
+- **Timelock** — 2-day delay, controls treasury and all admin functions
+- **L2 Deployment** — Arbitrum Sepolia with gas comparison table
+
+### Testing 
+
+| Type | Count | Requirement |
+|---|---|---|
+| Unit | 90+ | ≥ 50 |
+| Fuzz | 11 | ≥ 10 |
+| Invariant | 5 | ≥ 5 |
+| Fork | 3 | ≥ 3 |
+| **Total** | **109+** | **≥ 80** |
+
+### Security 
+- Checks-Effects-Interactions pattern throughout
+- ReentrancyGuard on all state-changing vault functions
+- OpenZeppelin AccessControl on GameItems; Ownable on all other admin contracts
+- SafeERC20 for all ERC-20 interactions
+- No `tx.origin`, no `block.timestamp` randomness, no `transfer`/`send`
+- Slither: zero High, zero Medium findings
+
+### Design Patterns Used 
+1. **Factory** — GameFactory (CREATE + CREATE2)
+2. **Proxy / UUPS** — GameItems V1 → V2
+3. **Checks-Effects-Interactions** — all swap/deposit/rental functions
+4. **Access Control / Role-based** — GameItems (MINTER_ROLE, UPGRADER_ROLE)
+5. **Timelock** — 2-day governance delay
+6. **Reentrancy Guard** — GameVault, GameAMM, NFTRentalVault
+7. **Oracle Adapter** — Chainlink price feed abstraction in GameVault
+8. **Pull-over-push** — NFTRentalVault fee withdrawal
 
 ---
 
@@ -97,114 +168,173 @@ A full-stack decentralized GameFi protocol featuring an ERC-1155 in-game item ec
 # Install Foundry
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
+
+# Verify installation
+forge --version
 ```
 
-### Build
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd YOUR_REPO
+
+# Install dependencies
+forge install
+
+# Build
 forge build
 ```
 
-### Test
+### Environment Setup
 
-```bash
-# Full test suite (unit + fuzz + fork)
-forge test
+Create a `.env` file in the project root:
 
-# With gas report
-forge test --gas-report --no-match-contract "Invariant"
-
-# Invariant tests (slow — ~60s)
-forge test --match-contract "Invariant"
-
-# Coverage
-forge coverage --report lcov
+```env
+DEPLOYER_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/YOUR_KEY
+MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+ARBISCAN_API_KEY=YOUR_ARBISCAN_KEY
+VRF_COORDINATOR=0x50d47e4142598E3411aA864e08a44284e471AC6f
+VRF_KEY_HASH=0x027f94ff1465b3525f9fc03e9ff7d6d2c0953482246dd6ae07570c45d6631414
+VRF_SUBSCRIPTION_ID=YOUR_SUBSCRIPTION_ID
 ```
 
-### Deploy
-
-```bash
-# Copy and fill in your keys
-cp .env.example .env
-
-# Deploy to Arbitrum Sepolia
-forge script script/Deploy.s.sol \
-  --rpc-url $ARBITRUM_SEPOLIA_RPC_URL \
-  --broadcast --verify \
-  --etherscan-api-key $ARBISCAN_API_KEY -vvvv
-```
-
-Required environment variables:
-
-```
-DEPLOYER_PRIVATE_KEY=
-ARBITRUM_SEPOLIA_RPC_URL=
-ARBISCAN_API_KEY=
-MAINNET_RPC_URL=          # for fork tests
-VRF_COORDINATOR=          # optional, uses mock if not set
-VRF_KEY_HASH=
-VRF_SUBSCRIPTION_ID=
-PRICE_FEED_ADDRESS=       # optional, uses mock if not set
-```
-
-### Frontend
-
-Open `frontend/index.html` in a browser with MetaMask installed and connected to Arbitrum Sepolia (Chain ID: 421614).
 
 ---
 
-## Test Suite Summary
+## Running Tests
 
-| Category | Count | Requirement |
-|---|---|---|
-| Unit tests | 110+ | ≥ 50 |
-| Fuzz tests | 16 | ≥ 10 |
-| Invariant tests | 5 | ≥ 5 |
-| Fork tests | 3 | ≥ 3 |
-| **Total** | **133** | **≥ 80** |
+```bash
+# All tests (excluding fork)
+forge test -vv
 
-All tests pass. See `coverage-report.md` for line coverage (≥ 90%).
+# Specific file
+forge test --match-path test/GameAMM.t.sol -vv
+
+# Fuzz tests only
+forge test --match-test "testFuzz" -vv
+
+# Invariant tests only
+forge test --match-test "invariant_" -vv
+
+# Fork tests (requires MAINNET_RPC_URL)
+source .env
+forge test --match-path test/Fork.t.sol --fork-url $MAINNET_RPC_URL -vvv
+
+# Coverage report
+forge coverage --report summary
+```
+
+---
+
+## Deployment
+
+```bash
+# Deploy to Arbitrum Sepolia (PowerShell)
+.\deploy.ps1
+
+# Or manually
+source .env
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url $ARBITRUM_SEPOLIA_RPC_URL \
+  --broadcast --verify \
+  --etherscan-api-key $ARBISCAN_API_KEY \
+  -vvvv
+```
+
+The deploy script:
+1. Deploys all contracts in the correct order
+2. Wires roles and permissions
+3. Transfers all ownership to the Timelock
+4. Runs post-deployment sanity checks automatically
+
+### After Deployment
+
+Add LootDrop as a VRF consumer:
+1. Go to https://vrf.chain.link/arbitrum-sepolia
+2. Find your subscription → "Add consumer"
+3. Paste the LootDrop address
+
+---
+
+## Gas Comparison — L1 vs L2
+
+| Operation | Ethereum Mainnet (est.) | Arbitrum Sepolia | Saving |
+|---|---|---|---|
+| GameToken deploy | ~1,200,000 gas | ~1,200,000 gas | ~10x cheaper (L2 pricing) |
+| addLiquidity (initial) | ~180,000 gas | ~180,000 gas | ~10x cheaper |
+| swapAtoB | ~85,000 gas | ~85,000 gas | ~10x cheaper |
+| deposit (ERC-4626) | ~95,000 gas | ~95,000 gas | ~10x cheaper |
+| listItem (rental) | ~110,000 gas | ~110,000 gas | ~10x cheaper |
+| propose (DAO) | ~200,000 gas | ~200,000 gas | ~10x cheaper |
+
+*Arbitrum Sepolia executes the same gas units but ETH cost is ~10x lower due to L2 fee structure.*
+
+### Yul Assembly Benchmark (GameAMM)
+
+| Function | Solidity | Yul | Gas Saving |
+|---|---|---|---|
+| `_sqrt` | ~230 gas | ~170 gas | **26%** |
+| `_getAmountOut` | ~115 gas | ~95 gas | **18%** |
 
 ---
 
 ## Security
 
-- ReentrancyGuard on all state-changing external functions
-- SafeERC20 for all ERC-20 interactions
-- Chainlink staleness check (reverts if price older than threshold)
-- No `tx.origin` authorization, no `transfer`/`send`, no `block.timestamp` randomness
-- Slither: zero High, zero Medium findings at submission (see `audit-report.pdf`)
+### Access Control
 
-See `audit-report.md` for the full internal security audit.
+| Role | Holder | Powers |
+|---|---|---|
+| `DEFAULT_ADMIN_ROLE` | Timelock | Grant/revoke roles on GameItems |
+| `MINTER_ROLE` | LootDrop, Timelock | Mint new GameItems |
+| `UPGRADER_ROLE` | Timelock | Upgrade GameItems implementation |
+| `owner()` | Timelock | Admin functions on GameToken, GameVault, NFTRentalVault |
+| Governor | GameDAO | Create proposals, control Timelock |
 
----
+### Timelock Powers
+- Mint new GAME tokens
+- Change drop rates and crafting costs
+- Upgrade GameItems contract
+- Change platform fees
+- Onboard new asset types
 
-## Documentation
-
-| Document | Location |
-|---|---|
-| Architecture & design | `docs/architecture.md` |
-| Security audit report | `docs/audit-report.md` |
-| Gas optimization report | `gas-report.md` |
-| Coverage report | `coverage-report.md` |
-| GraphQL queries | `subgraph/queries.graphql` |
-
----
-
-## Design Patterns Used
-
-1. **UUPS Proxy** — GameItems upgradeable V1 → V2
-2. **Factory** — GameFactory deploys items and AMMs via CREATE / CREATE2
-3. **Checks-Effects-Interactions** — all state-changing functions
-4. **Reentrancy Guard** — GameAMM, GameVault, NFTRentalVault
-5. **Access Control / Role-based permissions** — MINTER_ROLE, UPGRADER_ROLE
-6. **Oracle adapter** — AggregatorV3Interface abstraction with staleness check
-7. **Timelock** — 2-day delay on all governance-executed actions
+### What Cannot Happen
+- No instant parameter changes (2-day delay enforced on-chain)
+- No unilateral minting (requires governance vote + timelock)
+- No reentrancy (ReentrancyGuard on all vault functions)
+- No stale price usage (Chainlink staleness check, reverts if >1 hour old)
 
 ---
 
-## Gas Report
+## Project Structure
 
-See [gas-report.md](report/gas-report.mdrt.md) for full L1 vs L2 comparison and Yul optimization benchmarks.
-
-Key highlight: operations cost **~300x less** on Arbitrum Sepolia vs Ethereum Mainnet (e.g. `swapAtoB`: $5.40 L1 → $0.018 L2).
+```
+├── src/
+│   ├── GameToken.sol          # ERC-20 governance token
+│   ├── GameItems.sol          # ERC-1155 NFT items (UUPS V1)
+│   ├── GameItemsV2.sol        # UUPS V2 with crafting
+│   ├── GameAMM.sol            # Constant-product AMM + Yul
+│   ├── GameVault.sol          # ERC-4626 yield vault
+│   ├── GameDAO.sol            # OZ Governor + Timelock
+│   ├── GameFactory.sol        # CREATE + CREATE2 factory
+│   ├── NFTRentalVault.sol     # NFT rental marketplace
+│   ├── LootDrop.sol           # Chainlink VRF loot drops
+│   └── mocks/                 # Test mocks (not deployed)
+├── test/
+│   ├── GameToken.t.sol        # 16 tests
+│   ├── GameItems.t.sol        # 16 tests
+│   ├── GameAMM.t.sol          # 24 tests + invariants
+│   ├── GameVault.t.sol        # 24 tests + invariants
+│   ├── NFTRentalVault.t.sol   # 18 tests
+│   ├── GameDAO.t.sol          # 11 tests
+│   ├── GameFactory.t.sol      # 9 tests
+│   ├── LootDrop.t.sol         # 10 tests
+│   └── Fork.t.sol             # 3 mainnet fork tests
+├── script/
+│   └── Deploy.s.sol           # Idempotent deploy script
+├── foundry.toml
+├── deploy.ps1                 # PowerShell deploy helper
+└── verify.ps1                 # PowerShell verification helper
+```
