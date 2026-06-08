@@ -34,7 +34,7 @@ contract GameDAO is
     GovernorTimelockControl(_timelock)
     {}
 
-    // ─── Required overrides ───────────────────────────────────────────────────
+    // Required overrides 
 
     function votingDelay()
     public view override(Governor, GovernorSettings) returns (uint256)

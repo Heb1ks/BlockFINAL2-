@@ -33,7 +33,7 @@ contract GameAMMTest is Test {
         vm.stopPrank();
     }
 
-    // ─── addLiquidity ─────────────────────────────────────────────────────────
+    //  addLiquidity 
 
     function test_addLiquidity_initialMint_createsShares() public {
         vm.prank(alice);
@@ -77,7 +77,7 @@ contract GameAMMTest is Test {
         amm.addLiquidity(10_000e18, 20_000e18);
     }
 
-    // ─── removeLiquidity ──────────────────────────────────────────────────────
+    //  removeLiquidity 
 
     function test_removeLiquidity_basic() public {
         vm.prank(alice);
@@ -115,7 +115,7 @@ contract GameAMMTest is Test {
         amm.removeLiquidity(1e18);
     }
 
-    // ─── swapAtoB ─────────────────────────────────────────────────────────────
+    //  swapAtoB 
 
     function test_swapAtoB_basic() public {
         vm.prank(alice);
@@ -155,7 +155,7 @@ contract GameAMMTest is Test {
         assertEq(out, expected);
     }
 
-    // ─── swapBtoA ─────────────────────────────────────────────────────────────
+    //  swapBtoA 
 
     function test_swapBtoA_basic() public {
         vm.prank(alice);
@@ -183,7 +183,7 @@ contract GameAMMTest is Test {
         amm.swapBtoA(1_000e18, type(uint256).max);
     }
 
-    // ─── Yul benchmark ───────────────────────────────────────────────────────
+    //  Yul benchmark 
 
     function test_yulAmountOut_matchesSolidity() public view {
         uint256 sol = amm.getAmountOutSolidity(1_000e18, 50_000e18, 100_000e18);
@@ -210,7 +210,7 @@ contract GameAMMTest is Test {
         assertGe(rAAfter * rBAfter, kBefore);
     }
 
-    // ─── Fuzz ─────────────────────────────────────────────────────────────────
+    //  Fuzz 
 
     function testFuzz_swapAtoB_kNeverDecreases(uint256 amountIn) public {
         vm.prank(alice);
@@ -269,7 +269,7 @@ contract GameAMMTest is Test {
     }
 }
 
-// ─── Invariant Tests ──────────────────────────────────────────────────────────
+//  Invariant Tests 
 
 contract AMMHandler is Test {
     GameAMM   public amm;

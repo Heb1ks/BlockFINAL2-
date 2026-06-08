@@ -63,7 +63,6 @@ contract ReentrancyAttacker {
     }
 }
 
-/// @dev Fixed AMM — CEI pattern + reentrancy guard
 contract FixedAMM {
     IERC20 public tokenA;
     IERC20 public tokenB;
@@ -152,13 +151,10 @@ contract FixedToken {
     }
 }
 
-// ════════════════════════════════════════════════════════════════[...]
 //  TEST SUITE
-// ════════════════════════════════════════════════════════════════[...]
-
 contract SecurityCaseStudiesTest is Test {
 
-    // ── actors ──────────────────────────────────────────────────────────[...]
+    //  actors 
     address alice   = address(0xA1);
     address bob     = address(0xB0);
     address attacker = address(0xAA);
@@ -221,18 +217,18 @@ contract SecurityCaseStudiesTest is Test {
         vm.startPrank(attacker);
         tokenA.approve(address(vamm), type(uint256).max);
 
-        // VulnerableAMM has no _locked flag — calling swap twice in same
+        // VulnerableAMM has no _locked flag - calling swap twice in same
         // transaction is allowed (simulates reentrant call path)
         vamm.swap(100e18);
         vamm.swap(100e18); // ← second call succeeds on stale-ish reserves
 
-        // No revert — proves absence of reentrancy guard
+        // No revert - proves absence of reentrancy guard
         vm.stopPrank();
     }
 
-    // ──────────────────────────────────────────────────────────────[...]
+
     //  REENTRANCY — AFTER (fixed with CEI + nonReentrant)
-    // ──────────────────────────────────────────────────────────────[...]
+
 
     /// @notice Fixed AMM correctly processes an honest swap.
     function test_reentrancy_AFTER_honest_swap_works() public {
@@ -285,9 +281,9 @@ contract SecurityCaseStudiesTest is Test {
         reentrant.attack(100e18);
     }
 
-    // ──────────────────────────────────────────────────────────────[...]
+
     //  ACCESS CONTROL — BEFORE (anyone can mint)
-    // ──────────────────────────────────────────────────────────────[...]
+
 
     /// @notice Any address can mint from VulnerableToken — proves the bug.
     function test_accessControl_BEFORE_anyone_can_mint() public {
@@ -313,9 +309,9 @@ contract SecurityCaseStudiesTest is Test {
         assertEq(vtoken.balanceOf(rando), 999e18);
     }
 
-    // ──────────────────────────────────────────────────────────────[...]
+
     //  ACCESS CONTROL — AFTER (only owner can mint)
-    // ──────────────────────────────────────────────────────────────[...]
+
 
     /// @notice Owner can mint — expected functionality.
     function test_accessControl_AFTER_owner_can_mint() public {
@@ -383,9 +379,9 @@ contract SecurityCaseStudiesTest is Test {
     }
 }
 
-// ════════════════════════════════════════════════════════════════[...]
+
 //  Helper — contract that attempts to re-enter FixedAMM.swap()
-// ════════════════════════════════════════════════════════════════[...]
+
 contract ReentrantCaller {
     FixedAMM public amm;
     IERC20   public tokenA;

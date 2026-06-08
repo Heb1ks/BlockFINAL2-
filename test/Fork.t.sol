@@ -7,19 +7,8 @@ import "../src/GameVault.sol";
 import "../src/GameToken.sol";
 import "../src/mocks/MockV3Aggregator.sol";
 
-/// @notice Fork tests require an RPC URL set as env var:
-///         MAINNET_RPC_URL or ARBITRUM_SEPOLIA_RPC_URL
-///
-///         Run with:
-///           forge test --match-path test/Fork.t.sol \
-///             --fork-url $MAINNET_RPC_URL -vvv
-///
-///         Or configure in foundry.toml:
-///           [rpc_endpoints]
-///           mainnet = "${MAINNET_RPC_URL}"
-///           arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
 contract ForkTest is Test {
-    // ─── Mainnet addresses ────────────────────────────────────────────────────
+    //  Mainnet addresses 
     address constant CHAINLINK_ETH_USD    = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     address constant CHAINLINK_USDC_USD   = 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
     address constant USDC_MAINNET         = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -27,7 +16,7 @@ contract ForkTest is Test {
     address constant UNISWAP_V2_ROUTER    = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     address constant WETH_MAINNET         = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
-    // ─── Fork 1: Chainlink ETH/USD price feed ─────────────────────────────────
+    //  Fork 1: Chainlink ETH/USD price feed 
 
     function test_fork_chainlinkEthUsd_validPrice() public {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 20_000_000);
@@ -49,7 +38,7 @@ contract ForkTest is Test {
         assertGt(updatedAt, 0);
     }
 
-    // ─── Fork 2: Chainlink USDC/USD ≈ $1 ─────────────────────────────────────
+    //  Fork 2: Chainlink USDC/USD ≈ $1 
 
     function test_fork_chainlinkUsdcUsd_pegged() public {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 20_000_000);
@@ -62,7 +51,7 @@ contract ForkTest is Test {
         assertLt(price, 1.01e8, "USDC depegged above $1.01");
     }
 
-    // ─── Fork 3: USDC real balance via impersonation ──────────────────────────
+    //  Fork 3: USDC real balance via impersonation 
 
     function test_fork_usdcWhaleBalance() public {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 20_000_000);
@@ -74,7 +63,7 @@ contract ForkTest is Test {
         assertGt(balance, 1_000_000e6, "whale balance too low");
     }
 
-    // ─── (Optional) Arbitrum Sepolia fork for deployment verification ──────────
+    //  (Optional) Arbitrum Sepolia fork for deployment verification 
 
     // Uncomment if ARBITRUM_SEPOLIA_RPC_URL is set
     //

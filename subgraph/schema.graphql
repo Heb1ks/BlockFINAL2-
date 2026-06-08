@@ -1,4 +1,4 @@
-# ─── GameToken ────────────────────────────────────────────────────────────────
+#  GameToken 
 
 type TokenTransfer @entity(immutable: true) {
   id: Bytes!
@@ -10,7 +10,7 @@ type TokenTransfer @entity(immutable: true) {
   transactionHash: Bytes!
 }
 
-# ─── GameAMM ──────────────────────────────────────────────────────────────────
+#  GameAMM 
 
 type Swap @entity(immutable: true) {
   id: Bytes!
@@ -43,7 +43,7 @@ type AMMPool @entity(immutable: false) {
   liquidityProviderCount: BigInt!
 }
 
-# ─── NFTRentalVault ───────────────────────────────────────────────────────────
+#  NFTRentalVault 
 
 type Listing @entity(immutable: false) {
   id: String!
@@ -66,7 +66,7 @@ type Rental @entity(immutable: false) {
   transactionHash: Bytes!
 }
 
-# ─── GameDAO ──────────────────────────────────────────────────────────────────
+#  GameDAO 
 
 type Proposal @entity(immutable: false) {
   id: String!
@@ -94,7 +94,7 @@ type Vote @entity(immutable: true) {
   transactionHash: Bytes!
 }
 
-# ─── LootDrop ─────────────────────────────────────────────────────────────────
+#  LootDrop 
 
 type LootRequest @entity(immutable: false) {
   id: String!
@@ -106,7 +106,7 @@ type LootRequest @entity(immutable: false) {
   transactionHash: Bytes!
 }
 
-# ─── GameVault ────────────────────────────────────────────────────────────────
+#  GameVault 
 
 type VaultDeposit @entity(immutable: true) {
   id: Bytes!

@@ -15,7 +15,7 @@ contract GameToken is ERC20Votes, ERC20Permit, Ownable {
         _mint(initialOwner, 100_000 * 10 ** 18);
     }
 
-    // ─── Timestamp-based clock (EIP-6372) ────────────────────────────────────
+    //  Timestamp-based clock (EIP-6372) 
     function clock() public view override returns (uint48) {
         return uint48(block.timestamp);
     }
@@ -23,7 +23,7 @@ contract GameToken is ERC20Votes, ERC20Permit, Ownable {
     function CLOCK_MODE() public pure override returns (string memory) {
         return "mode=timestamp";
     }
-    // ─────────────────────────────────────────────────────────────────────────
+    // 
 
     function mint(address to, uint256 amount) external onlyOwner {
         require(totalSupply() + amount <= MAX_SUPPLY, "Exceeds max supply");

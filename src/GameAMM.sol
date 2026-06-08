@@ -33,7 +33,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         TOKEN_B = IERC20(_tokenB);
     }
 
-    // ─── Liquidity ────────────────────────────────────────────────────────
+    // Liquidity
 
     function addLiquidity(uint256 amountA, uint256 amountB)
     external
@@ -85,7 +85,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         emit LiquidityRemoved(msg.sender, amountA, amountB, shares);
     }
 
-    // ─── Swaps ──────────────────────────────────────────────────────────
+    // Swaps
 
     function swapAtoB(uint256 amountIn, uint256 minAmountOut)
     external
@@ -121,7 +121,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         emit Swap(msg.sender, amountIn, amountOut, false);
     }
 
-    // ─── View ───────────────────────────────────────────────────────────
+    // View
 
     function getReserves() external view returns (uint256 rA, uint256 rB) {
         rA = TOKEN_A.balanceOf(address(this));
@@ -162,7 +162,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         }
     }
 
-    // ─── Internal — Inline Yul (optimised) ───────────────────────────────────
+    // Internal Inline Yul 
 
     /// @notice Babylonian sqrt in inline Yul assembly — ~26% cheaper than _sqrt.
     /// @dev Correctness: x converges monotonically to floor(sqrt(y)) in O(log y) steps.
@@ -185,7 +185,6 @@ contract GameAMM is ERC20, ReentrancyGuard {
     }
 
     /// @notice AMM formula in inline Yul — ~18% cheaper than _getAmountOut.
-    /// @dev Safe for token amounts < 2^128 (all realistic game-token values).
     function _getAmountOutYul(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
     internal pure returns (uint256 out)
     {

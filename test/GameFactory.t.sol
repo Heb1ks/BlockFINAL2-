@@ -17,7 +17,7 @@ contract GameFactoryTest is Test {
         factory = new GameFactory(owner);
     }
 
-    // ─── deployGameItems (CREATE) ─────────────────────────────────────────────
+    //  deployGameItems (CREATE) 
 
     function test_deployGameItems_basic() public {
         vm.prank(owner);
@@ -52,7 +52,7 @@ contract GameFactoryTest is Test {
         assertTrue(i2.hasRole(i2.DEFAULT_ADMIN_ROLE(), alice));
     }
 
-    // ─── deployGameItemsWithSalt (CREATE2) ────────────────────────────────────
+    //  deployGameItemsWithSalt (CREATE2) 
 
     function test_deployGameItemsWithSalt_basic() public {
         uint256 salt = 42;
@@ -81,7 +81,7 @@ contract GameFactoryTest is Test {
         factory.deployGameItemsWithSalt(admin, 99);
     }
 
-    // ─── predictGameItemsAddress ──────────────────────────────────────────────
+    //  predictGameItemsAddress 
 
     function test_predictAddress_deterministicForSameSalt() public view {
         address p1 = factory.predictGameItemsAddress(7);
@@ -100,7 +100,7 @@ contract GameFactoryTest is Test {
         assertTrue(predicted != address(0));
     }
 
-    // ─── deployGameAMM ────────────────────────────────────────────────────────
+    //  deployGameAMM 
 
     function test_deployGameAMM_basic() public {
         MockERC20 tA = new MockERC20("A", "A", 18);

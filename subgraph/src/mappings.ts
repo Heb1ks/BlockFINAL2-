@@ -50,11 +50,11 @@ import {
     LootRequest,
 } from "../generated/schema"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+//  Constants 
 
 const AMM_POOL_ID = Bytes.fromHexString("0x00")
 
-// ─── GameToken ────────────────────────────────────────────────────────────────
+//  GameToken 
 
 export function handleTransfer(event: TransferEvent): void {
     let entity = new TokenTransfer(
@@ -69,7 +69,7 @@ export function handleTransfer(event: TransferEvent): void {
     entity.save()
 }
 
-// ─── GameAMM ──────────────────────────────────────────────────────────────────
+//  GameAMM 
 
 function loadOrCreatePool(): AMMPool {
     let pool = AMMPool.load(AMM_POOL_ID)
@@ -143,7 +143,7 @@ export function handleLiquidityRemoved(event: LiquidityRemovedEvent): void {
     liq.save()
 }
 
-// ─── NFTRentalVault ───────────────────────────────────────────────────────────
+//  NFTRentalVault 
 
 export function handleItemListed(event: ItemListedEvent): void {
     let listing = new Listing(event.params.listingId.toString())
@@ -197,7 +197,7 @@ export function handleItemDelisted(event: ItemDelistedEvent): void {
     }
 }
 
-// ─── GameDAO ──────────────────────────────────────────────────────────────────
+//  GameDAO 
 
 export function handleProposalCreated(event: ProposalCreatedEvent): void {
     let proposal = new Proposal(event.params.proposalId.toString())
@@ -264,7 +264,7 @@ export function handleProposalCanceled(event: ProposalCanceledEvent): void {
     }
 }
 
-// ─── LootDrop ─────────────────────────────────────────────────────────────────
+//  LootDrop 
 
 export function handleLootRequested(event: LootRequestedEvent): void {
     let request = new LootRequest(event.params.requestId.toString())

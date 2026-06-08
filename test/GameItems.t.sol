@@ -22,7 +22,7 @@ contract GameItemsTest is Test {
         items = GameItems(address(proxy));
     }
 
-    // ─── Initialization ───────────────────────────────────────────────────────
+    //  Initialization 
 
     function test_initialize_rolesGranted() public view {
         assertTrue(items.hasRole(items.DEFAULT_ADMIN_ROLE(), admin));
@@ -35,7 +35,7 @@ contract GameItemsTest is Test {
         items.initialize(alice);
     }
 
-    // ─── Minting ──────────────────────────────────────────────────────────────
+    //  Minting 
 
     function test_mint_basic() public {
         // FIX: cache constant BEFORE prank — vm.prank is consumed by items.SWORD() call
@@ -89,7 +89,7 @@ contract GameItemsTest is Test {
         items.mintBatch(alice, ids, amounts);
     }
 
-    // ─── Access Control ───────────────────────────────────────────────────────
+    //  Access Control 
 
     function test_grantMinterRole() public {
         bytes32 minterRole = items.MINTER_ROLE();
@@ -116,7 +116,7 @@ contract GameItemsTest is Test {
         items.mint(bob, swordId, 1);
     }
 
-    // ─── ERC-1155 ─────────────────────────────────────────────────────────────
+    //  ERC-1155 
 
     function test_supportsInterface_ERC1155() public view {
         assertTrue(items.supportsInterface(0xd9b67a26));
@@ -137,7 +137,7 @@ contract GameItemsTest is Test {
         assertEq(items.balanceOf(bob,   swordId), 2);
     }
 
-    // ─── UUPS Upgrade ─────────────────────────────────────────────────────────
+    //  UUPS Upgrade 
 
     function test_upgrade_toV2() public {
         GameItemsV2 v2Impl = new GameItemsV2();

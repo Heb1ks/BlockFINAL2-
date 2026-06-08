@@ -46,7 +46,7 @@ contract NFTRentalVaultTest is Test {
         token.approve(address(vault), type(uint256).max);
     }
 
-    // ─── listItem ──────────────────────────────────────────────────────────────
+    //  listItem 
 
     function test_listItem_basic() public {
         uint256 swordId = items.SWORD();
@@ -78,7 +78,7 @@ contract NFTRentalVaultTest is Test {
         vault.listItem(swordId, 1, 0);
     }
 
-    // ─── rentItem ──────────────────────────────────────────────────────────────
+    //  rentItem 
 
     function test_rentItem_basic() public {
         uint256 swordId = items.SWORD();
@@ -148,7 +148,7 @@ contract NFTRentalVaultTest is Test {
         vault.rentItem(listingId, 1);
     }
 
-    // ─── endRental ─────────────────────────────────────────────────────────────
+    //  endRental 
 
     function test_endRental_basic() public {
         uint256 swordId = items.SWORD();
@@ -189,7 +189,7 @@ contract NFTRentalVaultTest is Test {
         vault.endRental(rentalId);
     }
 
-    // ─── delistItem ────────────────────────────────────────────────────────────
+    //  delistItem 
 
     function test_delistItem_basic() public {
         uint256 swordId = items.SWORD();
@@ -214,7 +214,7 @@ contract NFTRentalVaultTest is Test {
         vault.delistItem(listingId);
     }
 
-    // ─── Admin ─────────────────────────────────────────────────────────────────
+    //  Admin 
 
     function test_setPlatformFee() public {
         vm.prank(owner);
@@ -241,7 +241,7 @@ contract NFTRentalVaultTest is Test {
         assertGt(token.balanceOf(owner), ownerBalBefore);
     }
 
-    // ─── Fuzz ─────────────────────────────────────────────────────────────────
+    //  Fuzz 
 
     function testFuzz_rentalCost(uint256 pricePerDay, uint256 durationDays) public {
         durationDays = bound(durationDays, 1, 7);

@@ -24,7 +24,7 @@ dataSources:
           handler: handleTransfer
       file: ./src/mappings.ts
 
-  # ─── GameAMM ────────────────────────────────────────────────────────────────
+  #  GameAMM 
   - kind: ethereum
     name: GameAMM
     network: arbitrum-sepolia
@@ -52,7 +52,7 @@ dataSources:
           handler: handleLiquidityRemoved
       file: ./src/mappings.ts
 
-  # ─── NFTRentalVault ──────────────────────────────────────────────────────────
+  #  NFTRentalVault 
   - kind: ethereum
     name: NFTRentalVault
     network: arbitrum-sepolia
@@ -81,7 +81,7 @@ dataSources:
           handler: handleItemDelisted
       file: ./src/mappings.ts
 
-  # ─── GameDAO ─────────────────────────────────────────────────────────────────
+  #  GameDAO 
   - kind: ethereum
     name: GameDAO
     network: arbitrum-sepolia
@@ -112,7 +112,7 @@ dataSources:
           handler: handleProposalCanceled
       file: ./src/mappings.ts
 
-  # ─── LootDrop ────────────────────────────────────────────────────────────────
+  #  LootDrop 
   - kind: ethereum
     name: LootDrop
     network: arbitrum-sepolia

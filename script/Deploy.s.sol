@@ -194,7 +194,7 @@ contract Deploy is Script {
         console.log("NFTRentalVault:    ", address(rentalVault));
         if (address(lootDrop) != address(0))
             console.log("LootDrop:          ", address(lootDrop));
-        console.log("=========================================");
+        console.log("==================");
     }
 
     /// @notice Post-deploy sanity checks (run after broadcast)

@@ -16,7 +16,7 @@ contract GameItemsV2 is GameItems, ReentrancyGuard {
     event RecipeRegistered(uint256[] inputIds, uint256[] inputAmounts, uint256 outputId);
     event ItemCrafted(address indexed player, uint256 outputId, uint256 amount);
 
-    // ─── Admin ───────────────────────────────────────────────────────────────
+    //  Admin 
 
     function setCraftingEnabled(bool enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
         craftingEnabled = enabled;
@@ -34,7 +34,7 @@ contract GameItemsV2 is GameItems, ReentrancyGuard {
         emit RecipeRegistered(inputIds, inputAmounts, outputId);
     }
 
-    // ─── Crafting ────────────────────────────────────────────────────────────
+    //  Crafting 
 
     function craft(
         uint256[] calldata inputIds,

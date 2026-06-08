@@ -38,7 +38,7 @@ contract GameVaultTest is Test {
         token.approve(address(vault), type(uint256).max);
     }
 
-    // ─── Deposit ─────────────────────────────────────────────────────────────
+    //  Deposit 
 
     function test_deposit_basic() public {
         vm.prank(alice);
@@ -62,7 +62,7 @@ contract GameVaultTest is Test {
         assertEq(shares, 0);
     }
 
-    // ─── Withdraw ─────────────────────────────────────────────────────────────
+    //  Withdraw 
 
     function test_withdraw_basic() public {
         vm.prank(alice);
@@ -86,7 +86,7 @@ contract GameVaultTest is Test {
         assertGt(assets, 1_000e18);
     }
 
-    // ─── Mint / Redeem ────────────────────────────────────────────────────────
+    //  Mint / Redeem 
 
     function test_mint_shares() public {
         // First deposit to set exchange rate
@@ -113,7 +113,7 @@ contract GameVaultTest is Test {
         assertEq(vault.balanceOf(alice), 0);
     }
 
-    // ─── Yield ────────────────────────────────────────────────────────────────
+    //  Yield 
 
     function test_depositYield_unauthorizedReverts() public {
         vm.prank(alice);
@@ -135,7 +135,7 @@ contract GameVaultTest is Test {
         assertEq(vault.totalAssets(), 500e18);
     }
 
-    // ─── Price Feed ───────────────────────────────────────────────────────────
+    //  Price Feed 
 
     function test_getLatestPrice_valid() public view {
         (int256 price,) = vault.getLatestPrice();
@@ -176,7 +176,7 @@ contract GameVaultTest is Test {
         assertEq(vault.stalenessThreshold(), 7200);
     }
 
-    // ─── ERC-4626 Rounding ────────────────────────────────────────────────────
+    //  ERC-4626 Rounding 
 
     function test_roundtrip_convertToSharesAndBack() public {
         vm.prank(alice);
@@ -202,7 +202,7 @@ contract GameVaultTest is Test {
         assertEq(actualShares, expectedShares);
     }
 
-    // ─── Fuzz ─────────────────────────────────────────────────────────────────
+    //  Fuzz 
 
     function testFuzz_deposit(uint256 assets) public {
         assets = bound(assets, 1, 10_000e18);
@@ -229,7 +229,7 @@ contract GameVaultTest is Test {
     }
 }
 
-// ─── Invariant Tests ──────────────────────────────────────────────────────────
+//  Invariant Tests 
 
 contract VaultHandler is Test {
     GameVault public vault;

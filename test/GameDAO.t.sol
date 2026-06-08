@@ -51,7 +51,7 @@ contract GameDAOTest is Test {
         vm.warp(block.timestamp + 2);
     }
 
-    // ─── Parameters ───────────────────────────────────────────────────────────
+    //  Parameters 
 
     function test_votingDelay_isOneDay() public view {
         assertEq(dao.votingDelay(), 1 days);
@@ -69,7 +69,7 @@ contract GameDAOTest is Test {
         assertEq(dao.proposalThreshold(), 1_000e18);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    //  Helpers 
 
     function _makeProposal() internal view returns (
         address[] memory targets,
@@ -96,7 +96,7 @@ contract GameDAOTest is Test {
         vm.warp(block.timestamp + 1 weeks + 1);
     }
 
-    // ─── Propose ──────────────────────────────────────────────────────────────
+    //  Propose 
 
     function test_propose_succeeds() public {
         (address[] memory t, uint256[] memory v, bytes[] memory c, string memory d) = _makeProposal();
@@ -121,7 +121,7 @@ contract GameDAOTest is Test {
         dao.propose(t, v, c, d);
     }
 
-    // ─── Vote ─────────────────────────────────────────────────────────────────
+    //  Vote 
 
     function test_castVote_succeeds() public {
         (address[] memory t, uint256[] memory v, bytes[] memory c, string memory d) = _makeProposal();
@@ -186,7 +186,7 @@ contract GameDAOTest is Test {
         assertEq(uint8(dao.state(proposalId)), uint8(IGovernor.ProposalState.Executed));
     }
 
-    // ─── Fuzz ─────────────────────────────────────────────────────────────────
+    //  Fuzz 
 
     function testFuzz_votingPower_proportional(uint256 mintAmount) public {
         mintAmount = bound(mintAmount, 1e18, 100_000e18);
