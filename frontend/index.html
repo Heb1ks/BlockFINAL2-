@@ -18,7 +18,7 @@
 
 <!-- Header -->
 <header>
-    <h1> GameFi Protocol</h1>
+    <h1>🎮 GameFi Protocol</h1>
     <nav class="game-nav">
         <a href="index.html"      class="game-nav-link game-nav-link--active">Dashboard</a>
         <a href="game/game.html"  class="game-nav-link">🎮 Inventory &amp; Craft</a>
@@ -46,7 +46,7 @@
 
     <!-- Swap -->
     <div class="card">
-        <h2> Swap (AMM)</h2>
+        <h2>💱 Swap (AMM)</h2>
         <div class="tab-bar">
             <button class="tab active" id="tabAtoB" onclick="setSwapDir(true)">GAME → RES</button>
             <button class="tab" id="tabBtoA" onclick="setSwapDir(false)">RES → GAME</button>
@@ -61,7 +61,7 @@
 
     <!-- Vault -->
     <div class="card">
-        <h2> Vault (ERC-4626)</h2>
+        <h2>🏦 Vault (ERC-4626)</h2>
         <div class="stat-row"><span class="label">Total Assets</span><span class="value" id="vaultAssets">—</span></div>
         <div class="stat-row"><span class="label">Total Shares</span><span class="value" id="vaultTotalShares">—</span></div>
 
@@ -82,12 +82,32 @@
 
     <!-- Delegate -->
     <div class="card">
-        <h2>Delegate Votes</h2>
+        <h2>🗳️ Delegate Votes</h2>
         <p class="hint-text">Delegate your voting power to participate in governance. Leave empty to delegate to yourself.</p>
         <label class="input-label">Delegate Address</label>
         <input id="delegateAddr" type="text" placeholder="0x... (leave empty = self)" />
         <button class="btn btn-purple" onclick="doDelegate()">Delegate</button>
         <div id="delegateStatus" class="tx-status"></div>
+    </div>
+
+    <!-- FIX BUG 1: Create Proposal Card -->
+    <div class="card full-width" id="create-proposal-card" style="display:none">
+        <h2>📝 Create Proposal</h2>
+        <p class="hint-text">
+            You need at least 1,000 GAME delegated to yourself to create a proposal.
+        </p>
+        <label class="input-label">Description</label>
+        <textarea id="proposalDesc"
+                  rows="3"
+                  placeholder="Describe your proposal (e.g. 'Enable crafting in GameItemsV2')"
+                  style="width:100%;background:#1e1f2e;color:#fff;border:1px solid #3b3c4e;border-radius:8px;padding:10px;resize:vertical"></textarea>
+        <p class="hint-text" style="margin-top:6px">
+            This will submit a no-op proposal (empty calldata) — useful for signalling governance intent.
+        </p>
+        <button class="btn btn-purple" onclick="doCreateProposal()" style="margin-top:8px">
+            🗳️ Submit Proposal
+        </button>
+        <div id="proposalCreateStatus" class="tx-status"></div>
     </div>
 
     <!-- Proposals (full width) -->
