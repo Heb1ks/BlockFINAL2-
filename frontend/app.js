@@ -37,9 +37,15 @@ const VAULT_ABI = [
     "function totalSupply() view returns (uint256)",
 ]
 
+// FIX BUG 1: Complete DAO ABI with propose and state functions
 const DAO_ABI = [
+    "function propose(address[] targets, uint256[] values, bytes[] calldatas, string description) returns (uint256)",
     "function castVote(uint256 proposalId, uint8 support) returns (uint256)",
     "function hasVoted(uint256 proposalId, address account) view returns (bool)",
+    "function state(uint256 proposalId) view returns (uint8)",
+    "function proposalThreshold() view returns (uint256)",
+    "function votingDelay() view returns (uint256)",
+    "function votingPeriod() view returns (uint256)",
 ]
 
 let provider    = null
@@ -49,7 +55,7 @@ let swapAtoB    = true
 
 const contracts = {}
 
-// ─── Wallet Connection ────────────────────────────────────────────────────────
+// ─── Wallet Connection ───────────────────────────────────────────────────────
 
 async function connectWallet() {
     try {
@@ -84,6 +90,9 @@ async function _onWalletReady(state) {
     contracts.amm   = new ethers.Contract(ADDRESSES.gameAMM,   AMM_ABI,   signer)
     contracts.vault = new ethers.Contract(ADDRESSES.gameVault, VAULT_ABI, signer)
     contracts.dao   = new ethers.Contract(ADDRESSES.gameDAO,   DAO_ABI,   signer)
+
+    // FIX BUG 1: Show proposal creation card after wallet is ready
+    document.getElementById("create-proposal-card").style.display = ""
 
     // FIX BUG 1: load wallet data on entry
     await refreshStats()
@@ -167,7 +176,7 @@ async function refreshStats() {
     }
 }
 
-// ─── Swap ─────────────────────────────────────────────────────────────────────
+// ─── Swap ───────────────────────────────────────────────────────────
 
 function setSwapDir(aToB) {
     swapAtoB = aToB
@@ -223,7 +232,7 @@ async function doSwap() {
     }
 }
 
-// ─── Vault ───────────────────────────────────────────────────────────────────
+// ─── Vault ──────────────────────────────────────────────────────────
 
 async function doDeposit() {
     const amtInput = document.getElementById("depositAmount").value
@@ -285,7 +294,7 @@ async function doRedeem() {
     }
 }
 
-// ─── Delegate ─────────────────────────────────────────────────────────────────
+// ─── Delegate ─────────────────────────────────────────────────────────
 
 async function doDelegate() {
     const input  = document.getElementById("delegateAddr").value.trim()
@@ -309,8 +318,61 @@ async function doDelegate() {
     }
 }
 
-// ─── DAO Voting ───────────────────────────────────────────────────────────────
+// ─── FIX BUG 1: Create Proposal ─────────────────────────────────────────────────
 
+async function doCreateProposal() {
+    if (!signer) {
+        alert("Connect wallet first")
+        return
+    }
+
+    const desc = document.getElementById("proposalDesc").value.trim()
+    if (!desc) {
+        alert("Please enter a description")
+        return
+    }
+
+    const statusEl = document.getElementById("proposalCreateStatus")
+
+    try {
+        // Check voting power threshold
+        const power = await contracts.token.getVotes(userAddress)
+        const threshold = await contracts.dao.proposalThreshold()
+        if (power < threshold) {
+            setStatus(statusEl, "error",
+                `❌ Need ${fmt(threshold)} GAME voting power. You have ${fmt(power)}.`)
+            return
+        }
+
+        setStatus(statusEl, "pending", "Submitting proposal...")
+
+        // No-op proposal — targets the DAO itself with empty calldata
+        const tx = await contracts.dao.propose(
+            [ADDRESSES.gameDAO],  // targets
+            [0n],                 // values
+            ["0x"],               // calldatas (no-op)
+            desc                  // description
+        )
+
+        setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
+        const receipt = await tx.wait()
+
+        setStatus(statusEl, "success",
+            "✅ Proposal submitted! List will refresh in ~5s. " + shortHash(tx.hash))
+        document.getElementById("proposalDesc").value = ""
+
+        // Обновить список через 5 сек (дать время subgraph проиндексировать)
+        setTimeout(() => loadProposals(), 5000)
+        setTimeout(() => loadProposals(), 15000) // второй retry
+
+    } catch (err) {
+        setStatus(statusEl, "error", parseError(err))
+    }
+}
+
+// ─── DAO Voting ─────────────────────────────────────────────────────────
+
+// FIX BUG 1: Check hasVoted before casting vote
 async function castVote(proposalId, support) {
     if (!signer) {
         alert("Please connect your wallet first")
@@ -320,6 +382,13 @@ async function castVote(proposalId, support) {
     if (!statusEl) return
 
     try {
+        // Check if already voted
+        const alreadyVoted = await contracts.dao.hasVoted(proposalId, userAddress)
+        if (alreadyVoted) {
+            setStatus(statusEl, "error", "❌ You have already voted on this proposal")
+            return
+        }
+
         setStatus(statusEl, "pending", "Submitting vote...")
         const tx = await contracts.dao.castVote(proposalId, support)
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
@@ -331,7 +400,7 @@ async function castVote(proposalId, support) {
     }
 }
 
-// ─── Subgraph ─────────────────────────────────────────────────────────────────
+// ─── Subgraph ─────────────────────────────────────────────────────────
 
 async function loadSubgraphData() {
     await Promise.all([loadProposals(), loadRecentSwaps()])
@@ -354,6 +423,7 @@ async function queryGraph(query, variables = {}) {
     }
 }
 
+// FIX BUG 1: Improved loadProposals with fallback and state updates
 async function loadProposals() {
     const el = document.getElementById("proposalsList")
     el.className = "empty-state"
@@ -366,13 +436,26 @@ async function loadProposals() {
     }
   }`)
 
+    // Fallback: If subgraph unavailable, try chain query
     if (!data || !data.proposals) {
-        el.textContent = "⚠️ Subgraph not deployed yet, or no proposals found."
+        el.textContent = "⚠️ Subgraph unavailable. Trying direct chain query..."
+        await loadProposalsFromChain(el)
         return
     }
     if (data.proposals.length === 0) {
-        el.textContent = "No proposals yet. Create one via the DAO contract."
+        el.textContent = "No proposals yet. Create one above!"
         return
+    }
+
+    // FIX BUG 1: Update state for each proposal from contract
+    const stateNames = ["Pending","Active","Canceled","Defeated","Succeeded","Queued","Expired","Executed"]
+    if (contracts.dao) {
+        await Promise.all(data.proposals.map(async (p) => {
+            try {
+                const stateNum = await contracts.dao.state(p.proposalId)
+                p.state = stateNames[Number(stateNum)] || p.state
+            } catch { /* fallback to subgraph state */ }
+        }))
     }
 
     el.className = ""
@@ -415,6 +498,58 @@ async function loadProposals() {
     }).join("")
 }
 
+// FIX BUG 1: Fallback to read proposals from chain if subgraph unavailable
+async function loadProposalsFromChain(el) {
+    if (!contracts.dao || !provider) {
+        el.textContent = "⚠️ Connect wallet to load proposals from chain."
+        return
+    }
+    try {
+        const filter = contracts.dao.filters.ProposalCreated()
+        const logs   = await contracts.dao.queryFilter(filter, -10000)
+        if (logs.length === 0) {
+            el.textContent = "No proposals found on chain."
+            return
+        }
+        const stateNames = ["Pending","Active","Canceled","Defeated","Succeeded","Queued","Expired","Executed"]
+        const items = await Promise.all(logs.slice(-10).reverse().map(async log => {
+            const { proposalId, proposer, description } = log.args
+            const stateNum = await contracts.dao.state(proposalId).catch(() => 0)
+            const stateName = stateNames[Number(stateNum)] || "Unknown"
+            const block = await provider.getBlock(log.blockNumber)
+            return { proposalId: proposalId.toString(), proposer, description, state: stateName,
+                     forVotes: "0", againstVotes: "0", abstainVotes: "0",
+                     createdAt: block?.timestamp?.toString() || "0" }
+        }))
+
+        el.className = ""
+        el.innerHTML = items.map(p => {
+            const date = new Date(parseInt(p.createdAt) * 1000).toLocaleDateString()
+            const desc = p.description.length > 90 ? p.description.slice(0,90) + "..." : p.description
+            return `
+      <div class="proposal">
+        <div class="proposal-desc">${escapeHtml(desc)}</div>
+        <div class="proposal-meta">
+          <span>By ${shortAddr(p.proposer)}</span><span>·</span>
+          <span>${date}</span>
+          <span class="state-badge state-${p.state}">${p.state}</span>
+        </div>
+        <div class="vote-counts" style="color:#6b7280;font-size:12px">Vote counts from chain (subgraph offline)</div>
+        ${p.state === "Active" ? `
+        <div class="vote-buttons">
+          <button class="btn-vote btn-for"     onclick="castVote('${p.proposalId}', 1)">Vote For</button>
+          <button class="btn-vote btn-against" onclick="castVote('${p.proposalId}', 0)">Vote Against</button>
+          <button class="btn-vote btn-abstain" onclick="castVote('${p.proposalId}', 2)">Abstain</button>
+        </div>
+        <div id="voteStatus-${p.proposalId}" class="tx-status"></div>
+        ` : ""}
+      </div>`
+        }).join("")
+    } catch(err) {
+        el.textContent = "⚠️ Failed to load proposals: " + err.message?.slice(0,80)
+    }
+}
+
 async function loadRecentSwaps() {
     const el = document.getElementById("swapHistory")
     el.className = "empty-state"
@@ -451,7 +586,7 @@ async function loadRecentSwaps() {
     el.innerHTML = `<div class="swap-history">${rows}</div>`
 }
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
+// ─── Utils ──────────────────────────────────────────────────────────
 
 function fmt(wei) {
     const val = parseFloat(ethers.formatEther(wei.toString()))
@@ -484,9 +619,14 @@ function setStatus(el, type, message) {
     el.textContent = message
 }
 
+// FIX BUG 2: Improved parseError handling
 function parseError(err) {
     if (err.reason)       return err.reason
     if (err.shortMessage) return err.shortMessage
+    // Handle "execution reverted (no data)" — likely require(false)
+    if (err.message?.includes("no data")) {
+        return "Crafting is disabled or recipe not registered. Contact admin."
+    }
     if (err.message)      return err.message.slice(0, 100)
     return "Unknown error"
 }
@@ -499,7 +639,7 @@ function escapeHtml(str) {
         .replace(/"/g,  "&quot;")
 }
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+// ─── Boot ───────────────────────────────────────────────────────────
 
 window.addEventListener("load", async () => {
     // Always load public subgraph data immediately
