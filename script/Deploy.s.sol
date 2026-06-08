@@ -85,7 +85,6 @@ contract Deploy is Script {
         _step7_rental();
         _step8_lootdrop();
         _step9_postSetup();
-        _step10_setupCrafting();
 
         vm.stopBroadcast();
 
@@ -171,6 +170,9 @@ contract Deploy is Script {
 
         gameVault.setYieldDepositor(address(rentalVault), true);
 
+        // ✅ SETUP CRAFTING BEFORE REVOKING DEPLOYER ROLE
+        _setupCraftingBeforeRevokeRole(items);
+
         // Transfer all admin power to Timelock
         gameToken.transferOwnership(address(timelock));
         gameVault.transferOwnership(address(timelock));
@@ -182,10 +184,8 @@ contract Deploy is Script {
         console.log("[9] Ownership transferred to Timelock");
     }
 
-    // FIX BUG 2: Setup crafting - enable crafting and register recipes
-    function _step10_setupCrafting() internal {
-        GameItemsV2 items = GameItemsV2(gameItemsProxy);
-
+    // ✅ FIX BUG 2: Setup crafting BEFORE deployer role is revoked
+    function _setupCraftingBeforeRevokeRole(GameItemsV2 items) internal {
         // Enable crafting
         items.setCraftingEnabled(true);
         console.log("[10] Crafting enabled");
