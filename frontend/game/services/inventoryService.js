@@ -121,8 +121,36 @@ export async function executeCraft(recipe, onStatus = () => {}) {
         // Mock path
         onStatus("pending", "Simulating transaction...")
         const result = await mockCraft(recipe)
-        onStatus("success", ` Crafted ${result.outputAmount}× ${result.outputItem.name}!`)
+        onStatus("success", `✨ Crafted ${result.outputAmount}× ${result.outputItem.name}!`)
         return result
+    }
+
+    // FIX BUG 2: Check crafting enabled and recipe validity before sending tx
+    try {
+        const enabled = await _contract.craftingEnabled()
+        if (!enabled) {
+            const err = new Error("Crafting is currently disabled on the contract. Contact the admin.")
+            onStatus("error", `❌ ${err.message}`)
+            throw err
+        }
+
+        // Check if recipe is registered
+        const key = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
+            ["uint256[]", "uint256[]", "uint256"],
+            [recipe.inputIds, recipe.inputAmounts, recipe.outputId]
+        ))
+        const recipeValid = await _contract.craftingRecipes(key)
+        if (!recipeValid) {
+            const err = new Error(`Recipe not registered on contract (key: ${key.slice(0,10)}...). Run SetupCrafting script.`)
+            onStatus("error", `❌ ${err.message}`)
+            throw err
+        }
+    } catch (err) {
+        if (err.message?.includes("Recipe not registered") || err.message?.includes("disabled")) {
+            throw err
+        }
+        // If pre-check fails for other reasons, fall back to trying tx anyway
+        console.warn("[InventoryService] Pre-check failed, attempting craft anyway:", err)
     }
 
     // Live blockchain path
@@ -136,11 +164,11 @@ export async function executeCraft(recipe, onStatus = () => {}) {
             recipe.outputAmount
         )
 
-        onStatus("pending", ` Pending: ${tx.hash.slice(0, 12)}...`)
+        onStatus("pending", `⏳ Pending: ${tx.hash.slice(0, 12)}...`)
         const receipt = await tx.wait()
 
         const outputItem = ITEM_DEFS[recipe.outputId]
-        onStatus("success", `Crafted! tx: ${tx.hash.slice(0, 10)}...`)
+        onStatus("success", `✅ Crafted! tx: ${tx.hash.slice(0, 10)}...`)
 
         return {
             success: true,
@@ -167,10 +195,10 @@ export async function requestLootDrop(onStatus = () => {}) {
         const won = Math.random() > 0.5
         if (won) {
             const itemId = Math.floor(Math.random() * 5)
-            onStatus("success", ` Loot dropped: ${ITEM_DEFS[itemId].emoji} ${ITEM_DEFS[itemId].name}!`)
+            onStatus("success", `✨ Loot dropped: ${ITEM_DEFS[itemId].emoji} ${ITEM_DEFS[itemId].name}!`)
             return { won: true, itemId }
         } else {
-            onStatus("error", " No loot this time. Try again!")
+            onStatus("error", "❌ No loot this time. Try again!")
             return { won: false }
         }
     }
@@ -178,9 +206,9 @@ export async function requestLootDrop(onStatus = () => {}) {
     try {
         onStatus("pending", "Requesting VRF loot drop...")
         const tx = await _lootContract.requestLoot()
-        onStatus("pending", ` Waiting: ${tx.hash.slice(0, 12)}...`)
+        onStatus("pending", `⏳ Waiting: ${tx.hash.slice(0, 12)}...`)
         await tx.wait()
-        onStatus("success", " VRF request submitted! Item will arrive shortly.")
+        onStatus("success", "✅ VRF request submitted! Item will arrive shortly.")
         return { success: true, txHash: tx.hash }
     } catch (err) {
         const msg = err.reason || err.shortMessage || err.message?.slice(0, 80)
