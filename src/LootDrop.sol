@@ -25,13 +25,10 @@ contract LootDrop is VRFConsumerBaseV2, Ownable {
     event LootDropped(uint256 indexed requestId, address indexed player, uint256 itemId);
     event LootMissed(uint256 indexed requestId, address indexed player);
 
-    constructor(
-        address _vrfCoordinator,
-        address _gameItems,
-        bytes32 _keyHash,
-        uint64 _subscriptionId,
-        address _owner
-    ) VRFConsumerBaseV2(_vrfCoordinator) Ownable(_owner) {
+    constructor(address _vrfCoordinator, address _gameItems, bytes32 _keyHash, uint64 _subscriptionId, address _owner)
+        VRFConsumerBaseV2(_vrfCoordinator)
+        Ownable(_owner)
+    {
         COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
         GAME_ITEMS = GameItems(_gameItems);
         keyHash = _keyHash;
@@ -40,11 +37,7 @@ contract LootDrop is VRFConsumerBaseV2, Ownable {
 
     function requestLoot() external returns (uint256 requestId) {
         requestId = COORDINATOR.requestRandomWords(
-            keyHash,
-            subscriptionId,
-            REQUEST_CONFIRMATIONS,
-            CALLBACK_GAS_LIMIT,
-            NUM_WORDS
+            keyHash, subscriptionId, REQUEST_CONFIRMATIONS, CALLBACK_GAS_LIMIT, NUM_WORDS
         );
         requestToPlayer[requestId] = msg.sender;
         emit LootRequested(requestId, msg.sender);

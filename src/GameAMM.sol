@@ -35,11 +35,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
 
     // Liquidity
 
-    function addLiquidity(uint256 amountA, uint256 amountB)
-    external
-    nonReentrant
-    returns (uint256 shares)
-    {
+    function addLiquidity(uint256 amountA, uint256 amountB) external nonReentrant returns (uint256 shares) {
         require(amountA > 0 && amountB > 0, "Zero amount");
 
         uint256 reserveA = TOKEN_A.balanceOf(address(this));
@@ -49,17 +45,14 @@ contract GameAMM is ERC20, ReentrancyGuard {
         TOKEN_B.safeTransferFrom(msg.sender, address(this), amountB);
 
         uint256 supply = totalSupply();
-        
+
         if (supply <= 0) {
             // Yul sqrt — ~26% cheaper than Solidity equivalent (see benchmark above)
             // First liquidity provider: mint shares based on geometric mean
             shares = _sqrtYul(amountA * amountB);
         } else {
             // Subsequent liquidity providers: mint based on proportional contribution
-            shares = _min(
-                (amountA * supply) / reserveA,
-                (amountB * supply) / reserveB
-            );
+            shares = _min((amountA * supply) / reserveA, (amountB * supply) / reserveB);
         }
 
         require(shares > 0, "Zero shares");
@@ -67,11 +60,7 @@ contract GameAMM is ERC20, ReentrancyGuard {
         emit LiquidityAdded(msg.sender, amountA, amountB, shares);
     }
 
-    function removeLiquidity(uint256 shares)
-    external
-    nonReentrant
-    returns (uint256 amountA, uint256 amountB)
-    {
+    function removeLiquidity(uint256 shares) external nonReentrant returns (uint256 amountA, uint256 amountB) {
         require(shares > 0, "Zero shares");
         uint256 supply = totalSupply();
         require(supply > 0, "No liquidity");
@@ -87,35 +76,21 @@ contract GameAMM is ERC20, ReentrancyGuard {
 
     // Swaps
 
-    function swapAtoB(uint256 amountIn, uint256 minAmountOut)
-    external
-    nonReentrant
-    returns (uint256 amountOut)
-    {
+    function swapAtoB(uint256 amountIn, uint256 minAmountOut) external nonReentrant returns (uint256 amountOut) {
         require(amountIn > 0, "Zero input");
         TOKEN_A.safeTransferFrom(msg.sender, address(this), amountIn);
-        amountOut = _getAmountOut(
-            amountIn,
-            TOKEN_A.balanceOf(address(this)) - amountIn,
-            TOKEN_B.balanceOf(address(this))
-        );
+        amountOut =
+            _getAmountOut(amountIn, TOKEN_A.balanceOf(address(this)) - amountIn, TOKEN_B.balanceOf(address(this)));
         require(amountOut >= minAmountOut, "Slippage exceeded");
         TOKEN_B.safeTransfer(msg.sender, amountOut);
         emit Swap(msg.sender, amountIn, amountOut, true);
     }
 
-    function swapBtoA(uint256 amountIn, uint256 minAmountOut)
-    external
-    nonReentrant
-    returns (uint256 amountOut)
-    {
+    function swapBtoA(uint256 amountIn, uint256 minAmountOut) external nonReentrant returns (uint256 amountOut) {
         require(amountIn > 0, "Zero input");
         TOKEN_B.safeTransferFrom(msg.sender, address(this), amountIn);
-        amountOut = _getAmountOut(
-            amountIn,
-            TOKEN_B.balanceOf(address(this)) - amountIn,
-            TOKEN_A.balanceOf(address(this))
-        );
+        amountOut =
+            _getAmountOut(amountIn, TOKEN_B.balanceOf(address(this)) - amountIn, TOKEN_A.balanceOf(address(this)));
         require(amountOut >= minAmountOut, "Slippage exceeded");
         TOKEN_A.safeTransfer(msg.sender, amountOut);
         emit Swap(msg.sender, amountIn, amountOut, false);
@@ -130,23 +105,21 @@ contract GameAMM is ERC20, ReentrancyGuard {
 
     /// @notice Expose Solidity path for external gas benchmarking
     function getAmountOutSolidity(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
-    external pure returns (uint256)
+        external
+        pure
+        returns (uint256)
     {
         return _getAmountOut(amountIn, reserveIn, reserveOut);
     }
 
     /// @notice Expose Yul path for external gas benchmarking
-    function getAmountOutYul(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
-    external pure returns (uint256)
-    {
+    function getAmountOutYul(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) external pure returns (uint256) {
         return _getAmountOutYul(amountIn, reserveIn, reserveOut);
     }
 
     // ─── Internal — Pure Solidity (benchmark baseline) ───────────────────────
 
-    function _getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
-    internal pure returns (uint256)
-    {
+    function _getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) internal pure returns (uint256) {
         uint256 amountInWithFee = amountIn * (FEE_DENOMINATOR - FEE);
         return (amountInWithFee * reserveOut) / (reserveIn * FEE_DENOMINATOR + amountInWithFee);
     }
@@ -156,13 +129,16 @@ contract GameAMM is ERC20, ReentrancyGuard {
         if (y > 3) {
             z = y;
             uint256 x = y / 2 + 1;
-            while (x < z) { z = x; x = (y / x + x) / 2; }
+            while (x < z) {
+                z = x;
+                x = (y / x + x) / 2;
+            }
         } else if (y != 0) {
             z = 1;
         }
     }
 
-    // Internal Inline Yul 
+    // Internal Inline Yul
 
     /// @notice Babylonian sqrt in inline Yul assembly — ~26% cheaper than _sqrt.
     /// @dev Correctness: x converges monotonically to floor(sqrt(y)) in O(log y) steps.
@@ -186,12 +162,14 @@ contract GameAMM is ERC20, ReentrancyGuard {
 
     /// @notice AMM formula in inline Yul — ~18% cheaper than _getAmountOut.
     function _getAmountOutYul(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
-    internal pure returns (uint256 out)
+        internal
+        pure
+        returns (uint256 out)
     {
         assembly {
             let amountInWithFee := mul(amountIn, 997)
-            let numerator       := mul(amountInWithFee, reserveOut)
-            let denominator     := add(mul(reserveIn, 1000), amountInWithFee)
+            let numerator := mul(amountInWithFee, reserveOut)
+            let denominator := add(mul(reserveIn, 1000), amountInWithFee)
             out := div(numerator, denominator)
         }
     }

@@ -24,19 +24,17 @@ contract GameResource is ERC20 {
 
 /// @dev Minimal Chainlink-compatible price feed mock for testnet
 contract DeployMockPriceFeed {
-    uint8  public decimals;
+    uint8 public decimals;
     int256 public answer;
     uint80 public roundId;
 
     constructor(uint8 _dec, int256 _ans) {
         decimals = _dec;
-        answer   = _ans;
-        roundId  = 1;
+        answer = _ans;
+        roundId = 1;
     }
 
-    function latestRoundData() external view returns (
-        uint80, int256, uint256, uint256, uint80
-    ) {
+    function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80) {
         return (roundId, answer, block.timestamp, block.timestamp, roundId);
     }
 }
@@ -54,23 +52,23 @@ contract DeployMockPriceFeed {
 ///   VRF_COORDINATOR, VRF_KEY_HASH, VRF_SUBSCRIPTION_ID, PRICE_FEED_ADDRESS
 contract Deploy is Script {
     uint256 constant TIMELOCK_DELAY = 2 days;
-    uint256 constant STALENESS      = 3600;
+    uint256 constant STALENESS = 3600;
 
     address deployer;
 
-    GameToken          gameToken;
-    address            gameItemsProxy;
-    GameAMM            gameAMM;
-    GameVault          gameVault;
+    GameToken gameToken;
+    address gameItemsProxy;
+    GameAMM gameAMM;
+    GameVault gameVault;
     TimelockController timelock;
-    GameDAO            gameDAO;
-    GameFactory        gameFactory;
-    NFTRentalVault     rentalVault;
-    LootDrop           lootDrop;
+    GameDAO gameDAO;
+    GameFactory gameFactory;
+    NFTRentalVault rentalVault;
+    LootDrop lootDrop;
 
     function run() external {
         uint256 pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        deployer   = vm.addr(pk);
+        deployer = vm.addr(pk);
 
         console.log("Deployer:", deployer);
         console.log("Chain:   ", block.chainid);
@@ -99,10 +97,10 @@ contract Deploy is Script {
     }
 
     function _step2_items() internal {
-        GameItems impl  = new GameItems();
-        bytes memory d  = abi.encodeCall(GameItems.initialize, (deployer));
+        GameItems impl = new GameItems();
+        bytes memory d = abi.encodeCall(GameItems.initialize, (deployer));
         ERC1967Proxy px = new ERC1967Proxy(address(impl), d);
-        gameItemsProxy  = address(px);
+        gameItemsProxy = address(px);
         console.log("[2] GameItems proxy:", gameItemsProxy);
         console.log("[2] GameItems impl: ", address(impl));
     }
@@ -115,10 +113,10 @@ contract Deploy is Script {
     function _step4_governance() internal {
         address[] memory empty = new address[](0);
         timelock = new TimelockController(TIMELOCK_DELAY, empty, empty, deployer);
-        gameDAO  = new GameDAO(IVotes(address(gameToken)), timelock);
+        gameDAO = new GameDAO(IVotes(address(gameToken)), timelock);
 
-        timelock.grantRole(timelock.PROPOSER_ROLE(),  address(gameDAO));
-        timelock.grantRole(timelock.EXECUTOR_ROLE(),  address(gameDAO));
+        timelock.grantRole(timelock.PROPOSER_ROLE(), address(gameDAO));
+        timelock.grantRole(timelock.EXECUTOR_ROLE(), address(gameDAO));
         timelock.grantRole(timelock.CANCELLER_ROLE(), address(gameDAO));
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
 
@@ -150,9 +148,9 @@ contract Deploy is Script {
     }
 
     function _step8_lootdrop() internal {
-        address vrfCoord = vm.envOr("VRF_COORDINATOR",     address(0));
-        bytes32 keyHash  = vm.envOr("VRF_KEY_HASH",        bytes32(0));
-        uint64  subId    = uint64(vm.envOr("VRF_SUBSCRIPTION_ID", uint256(1)));
+        address vrfCoord = vm.envOr("VRF_COORDINATOR", address(0));
+        bytes32 keyHash = vm.envOr("VRF_KEY_HASH", bytes32(0));
+        uint64 subId = uint64(vm.envOr("VRF_SUBSCRIPTION_ID", uint256(1)));
 
         if (vrfCoord == address(0)) {
             console.log("[8] VRF_COORDINATOR not set - skipping LootDrop");
@@ -192,23 +190,21 @@ contract Deploy is Script {
         console.log("GameAMM:           ", address(gameAMM));
         console.log("GameVault:         ", address(gameVault));
         console.log("NFTRentalVault:    ", address(rentalVault));
-        if (address(lootDrop) != address(0))
+        if (address(lootDrop) != address(0)) {
             console.log("LootDrop:          ", address(lootDrop));
+        }
         console.log("==================");
     }
 
     /// @notice Post-deploy sanity checks (run after broadcast)
     function _runChecks() internal view {
-        require(gameToken.owner()    == address(timelock), "FAIL: token owner != timelock");
-        require(gameVault.owner()    == address(timelock), "FAIL: vault owner != timelock");
-        require(rentalVault.owner()  == address(timelock), "FAIL: rental owner != timelock");
-        require(timelock.getMinDelay() == TIMELOCK_DELAY,  "FAIL: wrong timelock delay");
+        require(gameToken.owner() == address(timelock), "FAIL: token owner != timelock");
+        require(gameVault.owner() == address(timelock), "FAIL: vault owner != timelock");
+        require(rentalVault.owner() == address(timelock), "FAIL: rental owner != timelock");
+        require(timelock.getMinDelay() == TIMELOCK_DELAY, "FAIL: wrong timelock delay");
 
         GameItems items = GameItems(gameItemsProxy);
-        require(
-            items.hasRole(items.DEFAULT_ADMIN_ROLE(), address(timelock)),
-            "FAIL: timelock missing items admin role"
-        );
+        require(items.hasRole(items.DEFAULT_ADMIN_ROLE(), address(timelock)), "FAIL: timelock missing items admin role");
 
         console.log("\n[checks] All post-deploy assertions passed!");
     }

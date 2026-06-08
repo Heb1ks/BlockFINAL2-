@@ -6,10 +6,9 @@
 
 import { ITEM_DEFS, CRAFTING_RECIPES, getMockInventory, mockCraft } from "./mockService.js"
 
-// ─── Contract Config ──────────────────────────────────────────────────────
-// GameItems proxy address on Arbitrum Sepolia (chainId 421614)
-export const GAME_ITEMS_ADDRESS = "0xd38ca79adfc7300a95adaac16a5f543c205ebf64"
-export const LOOT_DROP_ADDRESS  = "0xd1d24f55107c7ee9fde319502d8bca9fe1bb288c"
+
+export const GAME_ITEMS_ADDRESS = "0xD9F25A49ea7fE5f8a6Fa38DAfeCD7113AA5D72C7"
+export const LOOT_DROP_ADDRESS  = "0x3E2543ee4ecF024e12ace9Ca12D4A9Fd3E0deAe0"
 
 export const GAME_ITEMS_V2_ABI = [
     // ERC-1155 read

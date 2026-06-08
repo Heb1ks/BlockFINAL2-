@@ -9,7 +9,6 @@ import "./GameAMM.sol";
 /// @title GameFactory — deploys GameItems (via ERC1967Proxy) and GameAMM instances
 /// @notice Uses CREATE for GameItems/GameAMM, CREATE2 for deterministic GameItems addresses
 contract GameFactory is Ownable {
-
     event GameItemsDeployed(address indexed proxy, address indexed impl, uint256 indexed salt);
     event GameAMMDeployed(address indexed instance, address tokenA, address tokenB);
 
@@ -20,20 +19,18 @@ contract GameFactory is Ownable {
 
     /// @notice Deploy GameItems proxy with CREATE
     function deployGameItems(address admin) external onlyOwner returns (address proxy) {
-        GameItems impl   = new GameItems();
+        GameItems impl = new GameItems();
         bytes memory initData = abi.encodeCall(GameItems.initialize, (admin));
-        ERC1967Proxy p   = new ERC1967Proxy(address(impl), initData);
+        ERC1967Proxy p = new ERC1967Proxy(address(impl), initData);
         proxy = address(p);
         emit GameItemsDeployed(proxy, address(impl), 0);
     }
 
     /// @notice Deploy GameItems proxy with CREATE2 (deterministic address)
-    function deployGameItemsWithSalt(address admin, uint256 salt)
-    external onlyOwner returns (address proxy)
-    {
-        GameItems impl        = new GameItems();
+    function deployGameItemsWithSalt(address admin, uint256 salt) external onlyOwner returns (address proxy) {
+        GameItems impl = new GameItems();
         bytes memory initData = abi.encodeCall(GameItems.initialize, (admin));
-        ERC1967Proxy p        = new ERC1967Proxy{salt: bytes32(salt)}(address(impl), initData);
+        ERC1967Proxy p = new ERC1967Proxy{salt: bytes32(salt)}(address(impl), initData);
         proxy = address(p);
         gameItemsInstances[salt] = proxy;
         emit GameItemsDeployed(proxy, address(impl), salt);
@@ -46,18 +43,14 @@ contract GameFactory is Ownable {
         // keccak256(0xff ++ factory ++ salt ++ keccak256(proxyCreationCode ++ abi.encode(impl,initData)))
         // We return a stable view based on the proxy creation code hash pattern.
         bytes32 proxyCodeHash = keccak256(type(ERC1967Proxy).creationCode);
-        bytes32 hash = keccak256(
-            abi.encodePacked(bytes1(0xff), address(this), bytes32(salt), proxyCodeHash)
-        );
+        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(this), bytes32(salt), proxyCodeHash));
         return address(uint160(uint256(hash)));
     }
 
     /// @notice Deploy GameAMM with CREATE
-    function deployGameAMM(address tokenA, address tokenB)
-    external onlyOwner returns (address instance)
-    {
+    function deployGameAMM(address tokenA, address tokenB) external onlyOwner returns (address instance) {
         GameAMM amm = new GameAMM(tokenA, tokenB);
-        instance    = address(amm);
+        instance = address(amm);
         ammInstances.push(instance);
         emit GameAMMDeployed(instance, tokenA, tokenB);
     }

@@ -8,7 +8,7 @@ contract GameTokenTest is Test {
     GameToken token;
     address owner = address(0xA);
     address alice = address(0xB);
-    address bob   = address(0xC);
+    address bob = address(0xC);
 
     function setUp() public {
         vm.prank(owner);
@@ -105,17 +105,23 @@ contract GameTokenTest is Test {
 
     function test_permit() public {
         uint256 privKey = 0xBEEF;
-        address signer  = vm.addr(privKey);
+        address signer = vm.addr(privKey);
 
         vm.prank(owner);
         token.transfer(signer, 1_000e18);
 
-        uint256 deadline  = block.timestamp + 1 hours;
+        uint256 deadline = block.timestamp + 1 hours;
         bytes32 domainSep = token.DOMAIN_SEPARATOR();
-        bytes32 structHash = keccak256(abi.encode(
-            keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
-            signer, alice, 500e18, token.nonces(signer), deadline
-        ));
+        bytes32 structHash = keccak256(
+            abi.encode(
+                keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                signer,
+                alice,
+                500e18,
+                token.nonces(signer),
+                deadline
+            )
+        );
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSep, structHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privKey, digest);
 

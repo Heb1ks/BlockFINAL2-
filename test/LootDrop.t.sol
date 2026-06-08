@@ -8,15 +8,15 @@ import "../src/GameItems.sol";
 import "../src/mocks/MockVRFCoordinator.sol";
 
 contract LootDropTest is Test {
-    LootDrop            lootDrop;
-    GameItems           items;
-    MockVRFCoordinator  vrf;
+    LootDrop lootDrop;
+    GameItems items;
+    MockVRFCoordinator vrf;
 
     address owner = address(0xA);
     address alice = address(0xB);
 
     bytes32 constant KEY_HASH = keccak256("testKeyHash");
-    uint64  constant SUB_ID   = 1;
+    uint64 constant SUB_ID = 1;
 
     function setUp() public {
         GameItems impl = new GameItems();
@@ -27,9 +27,7 @@ contract LootDropTest is Test {
         vrf = new MockVRFCoordinator();
 
         vm.prank(owner);
-        lootDrop = new LootDrop(
-            address(vrf), address(items), KEY_HASH, SUB_ID, owner
-        );
+        lootDrop = new LootDrop(address(vrf), address(items), KEY_HASH, SUB_ID, owner);
 
         // FIX: cache role hash BEFORE prank to avoid prank being consumed
         bytes32 minterRole = items.MINTER_ROLE();
@@ -121,7 +119,9 @@ contract LootDropTest is Test {
         vrf.fulfillRandomWords(address(lootDrop), requestId, rw);
 
         uint256 totalBalance;
-        for (uint256 i = 0; i < 5; i++) totalBalance += items.balanceOf(alice, i);
+        for (uint256 i = 0; i < 5; i++) {
+            totalBalance += items.balanceOf(alice, i);
+        }
 
         bool shouldDrop = (randomWord % 1000) < dropRate;
         if (shouldDrop) {

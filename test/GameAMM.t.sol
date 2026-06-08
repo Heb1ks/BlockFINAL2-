@@ -6,21 +6,21 @@ import "../src/GameAMM.sol";
 import "../src/mocks/MockERC20.sol";
 
 contract GameAMMTest is Test {
-    GameAMM   amm;
+    GameAMM amm;
     MockERC20 tokenA;
     MockERC20 tokenB;
     address alice = address(0xA);
-    address bob   = address(0xB);
+    address bob = address(0xB);
 
     function setUp() public {
         tokenA = new MockERC20("Gold", "GOLD", 18);
         tokenB = new MockERC20("Wood", "WOOD", 18);
-        amm    = new GameAMM(address(tokenA), address(tokenB));
+        amm = new GameAMM(address(tokenA), address(tokenB));
 
         tokenA.mint(alice, 100_000e18);
         tokenB.mint(alice, 200_000e18);
-        tokenA.mint(bob,   100_000e18);
-        tokenB.mint(bob,   200_000e18);
+        tokenA.mint(bob, 100_000e18);
+        tokenB.mint(bob, 200_000e18);
 
         vm.startPrank(alice);
         tokenA.approve(address(amm), type(uint256).max);
@@ -33,7 +33,7 @@ contract GameAMMTest is Test {
         vm.stopPrank();
     }
 
-    //  addLiquidity 
+    //  addLiquidity
 
     function test_addLiquidity_initialMint_createsShares() public {
         vm.prank(alice);
@@ -77,7 +77,7 @@ contract GameAMMTest is Test {
         amm.addLiquidity(10_000e18, 20_000e18);
     }
 
-    //  removeLiquidity 
+    //  removeLiquidity
 
     function test_removeLiquidity_basic() public {
         vm.prank(alice);
@@ -115,7 +115,7 @@ contract GameAMMTest is Test {
         amm.removeLiquidity(1e18);
     }
 
-    //  swapAtoB 
+    //  swapAtoB
 
     function test_swapAtoB_basic() public {
         vm.prank(alice);
@@ -146,16 +146,16 @@ contract GameAMMTest is Test {
     function test_swapAtoB_feeDeducted() public {
         vm.prank(alice);
         amm.addLiquidity(50_000e18, 100_000e18);
-        uint256 amtIn   = 1_000e18;
-        uint256 rA      = 50_000e18;
-        uint256 rB      = 100_000e18;
+        uint256 amtIn = 1_000e18;
+        uint256 rA = 50_000e18;
+        uint256 rB = 100_000e18;
         uint256 expected = (amtIn * 997 * rB) / (rA * 1000 + amtIn * 997);
         vm.prank(bob);
         uint256 out = amm.swapAtoB(amtIn, 0);
         assertEq(out, expected);
     }
 
-    //  swapBtoA 
+    //  swapBtoA
 
     function test_swapBtoA_basic() public {
         vm.prank(alice);
@@ -183,7 +183,7 @@ contract GameAMMTest is Test {
         amm.swapBtoA(1_000e18, type(uint256).max);
     }
 
-    //  Yul benchmark 
+    //  Yul benchmark
 
     function test_yulAmountOut_matchesSolidity() public view {
         uint256 sol = amm.getAmountOutSolidity(1_000e18, 50_000e18, 100_000e18);
@@ -210,7 +210,7 @@ contract GameAMMTest is Test {
         assertGe(rAAfter * rBAfter, kBefore);
     }
 
-    //  Fuzz 
+    //  Fuzz
 
     function testFuzz_swapAtoB_kNeverDecreases(uint256 amountIn) public {
         vm.prank(alice);
@@ -261,27 +261,27 @@ contract GameAMMTest is Test {
     // FIX: bound inputs to uint128 max to avoid overflow in Yul (unchecked mul)
     function testFuzz_yulMatchesSolidity(uint256 amtIn, uint256 rIn, uint256 rOut) public view {
         amtIn = bound(amtIn, 1, type(uint64).max);
-        rIn   = bound(rIn,   1, type(uint64).max);
-        rOut  = bound(rOut,  1, type(uint64).max);
+        rIn = bound(rIn, 1, type(uint64).max);
+        rOut = bound(rOut, 1, type(uint64).max);
         uint256 sol = amm.getAmountOutSolidity(amtIn, rIn, rOut);
         uint256 yul = amm.getAmountOutYul(amtIn, rIn, rOut);
         assertEq(sol, yul);
     }
 }
 
-//  Invariant Tests 
+//  Invariant Tests
 
 contract AMMHandler is Test {
-    GameAMM   public amm;
+    GameAMM public amm;
     MockERC20 public tokenA;
     MockERC20 public tokenB;
 
-    address lp      = address(0xAA);
+    address lp = address(0xAA);
     address swapper = address(0xBB);
     uint256 public lastK;
 
     constructor(GameAMM _amm, MockERC20 _tA, MockERC20 _tB) {
-        amm    = _amm;
+        amm = _amm;
         tokenA = _tA;
         tokenB = _tB;
 
@@ -346,15 +346,15 @@ contract AMMHandler is Test {
 }
 
 contract AMMInvariantTest is Test {
-    GameAMM    amm;
-    MockERC20  tokenA;
-    MockERC20  tokenB;
+    GameAMM amm;
+    MockERC20 tokenA;
+    MockERC20 tokenB;
     AMMHandler handler;
 
     function setUp() public {
-        tokenA  = new MockERC20("Gold", "GOLD", 18);
-        tokenB  = new MockERC20("Wood", "WOOD", 18);
-        amm     = new GameAMM(address(tokenA), address(tokenB));
+        tokenA = new MockERC20("Gold", "GOLD", 18);
+        tokenB = new MockERC20("Wood", "WOOD", 18);
+        amm = new GameAMM(address(tokenA), address(tokenB));
         handler = new AMMHandler(amm, tokenA, tokenB);
         targetContract(address(handler));
     }

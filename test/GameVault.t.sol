@@ -7,16 +7,16 @@ import "../src/GameToken.sol";
 import "../src/mocks/MockV3Aggregator.sol";
 
 contract GameVaultTest is Test {
-    GameVault        vault;
-    GameToken        token;
+    GameVault vault;
+    GameToken token;
     MockV3Aggregator feed;
 
     address owner = address(0xA);
     address alice = address(0xB);
-    address bob   = address(0xC);
+    address bob = address(0xC);
 
-    uint256 constant STALENESS  = 3600;
-    int256  constant INIT_PRICE = 2e8;
+    uint256 constant STALENESS = 3600;
+    int256 constant INIT_PRICE = 2e8;
 
     function setUp() public {
         // Start time at a non-trivial value to avoid underflow in stale tests
@@ -24,10 +24,10 @@ contract GameVaultTest is Test {
 
         vm.startPrank(owner);
         token = new GameToken(owner);
-        feed  = new MockV3Aggregator(8, INIT_PRICE);
+        feed = new MockV3Aggregator(8, INIT_PRICE);
         vault = new GameVault(IERC20(address(token)), address(feed), owner, STALENESS);
         token.mint(alice, 10_000e18);
-        token.mint(bob,   10_000e18);
+        token.mint(bob, 10_000e18);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -38,7 +38,7 @@ contract GameVaultTest is Test {
         token.approve(address(vault), type(uint256).max);
     }
 
-    //  Deposit 
+    //  Deposit
 
     function test_deposit_basic() public {
         vm.prank(alice);
@@ -62,7 +62,7 @@ contract GameVaultTest is Test {
         assertEq(shares, 0);
     }
 
-    //  Withdraw 
+    //  Withdraw
 
     function test_withdraw_basic() public {
         vm.prank(alice);
@@ -86,7 +86,7 @@ contract GameVaultTest is Test {
         assertGt(assets, 1_000e18);
     }
 
-    //  Mint / Redeem 
+    //  Mint / Redeem
 
     function test_mint_shares() public {
         // First deposit to set exchange rate
@@ -113,7 +113,7 @@ contract GameVaultTest is Test {
         assertEq(vault.balanceOf(alice), 0);
     }
 
-    //  Yield 
+    //  Yield
 
     function test_depositYield_unauthorizedReverts() public {
         vm.prank(alice);
@@ -135,7 +135,7 @@ contract GameVaultTest is Test {
         assertEq(vault.totalAssets(), 500e18);
     }
 
-    //  Price Feed 
+    //  Price Feed
 
     function test_getLatestPrice_valid() public view {
         (int256 price,) = vault.getLatestPrice();
@@ -176,7 +176,7 @@ contract GameVaultTest is Test {
         assertEq(vault.stalenessThreshold(), 7200);
     }
 
-    //  ERC-4626 Rounding 
+    //  ERC-4626 Rounding
 
     function test_roundtrip_convertToSharesAndBack() public {
         vm.prank(alice);
@@ -202,7 +202,7 @@ contract GameVaultTest is Test {
         assertEq(actualShares, expectedShares);
     }
 
-    //  Fuzz 
+    //  Fuzz
 
     function testFuzz_deposit(uint256 assets) public {
         assets = bound(assets, 1, 10_000e18);
@@ -229,12 +229,12 @@ contract GameVaultTest is Test {
     }
 }
 
-//  Invariant Tests 
+//  Invariant Tests
 
 contract VaultHandler is Test {
     GameVault public vault;
     GameToken public token;
-    address   public owner;
+    address public owner;
 
     address user1 = address(0x11);
     address user2 = address(0x22);
@@ -274,9 +274,9 @@ contract VaultHandler is Test {
 }
 
 contract VaultInvariantTest is Test {
-    GameVault        vault;
-    GameToken        token;
-    VaultHandler     handler;
+    GameVault vault;
+    GameToken token;
+    VaultHandler handler;
     MockV3Aggregator feed;
 
     address owner = address(0xA);
@@ -284,10 +284,10 @@ contract VaultInvariantTest is Test {
     function setUp() public {
         vm.warp(10_000);
         vm.prank(owner);
-        token   = new GameToken(owner);
-        feed    = new MockV3Aggregator(8, 2e8);
+        token = new GameToken(owner);
+        feed = new MockV3Aggregator(8, 2e8);
         vm.prank(owner);
-        vault   = new GameVault(IERC20(address(token)), address(feed), owner, 3600);
+        vault = new GameVault(IERC20(address(token)), address(feed), owner, 3600);
         handler = new VaultHandler(vault, token, owner);
         targetContract(address(handler));
     }

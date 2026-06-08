@@ -19,33 +19,28 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
     /// @notice Authorized yield depositors (e.g. NFTRentalVault)
     mapping(address => bool) public yieldDepositors;
 
-    //  Events 
+    //  Events
     event YieldDeposited(address indexed from, uint256 amount);
     event YieldDepositorSet(address indexed depositor, bool authorized);
     event StalenessThresholdUpdated(uint256 newThreshold);
 
-    //  Errors 
+    //  Errors
     error UnauthorizedDepositor();
     error StalePriceFeed(uint256 updatedAt, uint256 currentTime);
     error InvalidPrice(int256 price);
     error IncompleteRound();
 
-    //  Constructor 
-    constructor(
-        IERC20 _asset,
-        address _priceFeed,
-        address _owner,
-        uint256 _stalenessThreshold
-    )
-    ERC4626(_asset)
-    ERC20("Staked GameToken", "sGAME")
-    Ownable(_owner)
+    //  Constructor
+    constructor(IERC20 _asset, address _priceFeed, address _owner, uint256 _stalenessThreshold)
+        ERC4626(_asset)
+        ERC20("Staked GameToken", "sGAME")
+        Ownable(_owner)
     {
         priceFeed = AggregatorV3Interface(_priceFeed);
         stalenessThreshold = _stalenessThreshold;
     }
 
-    //  Yield Management 
+    //  Yield Management
 
     /// @notice Allow an address to deposit yield into the vault
     function setYieldDepositor(address depositor, bool authorized) external onlyOwner {
@@ -63,7 +58,7 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
         emit YieldDeposited(msg.sender, amount);
     }
 
-    //  Oracle 
+    //  Oracle
 
     /// @notice Update the staleness threshold (owner only)
     function setStalenessThreshold(uint256 newThreshold) external onlyOwner {
@@ -75,13 +70,8 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
     /// @return price  Raw answer from the aggregator (8 decimals for USD pairs)
     /// @return updatedAt  Timestamp of the last price update
     function getLatestPrice() public view returns (int256 price, uint256 updatedAt) {
-        (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 timestamp,
-            uint80 answeredInRound
-        ) = priceFeed.latestRoundData();
+        (uint80 roundId, int256 answer, uint256 startedAt, uint256 timestamp, uint80 answeredInRound) =
+            priceFeed.latestRoundData();
 
         if (answer <= 0) revert InvalidPrice(answer);
         if (startedAt == 0 || timestamp == 0) revert IncompleteRound();
@@ -98,50 +88,30 @@ contract GameVault is ERC4626, Ownable, ReentrancyGuard {
     /// @notice Total vault value denominated in USD (result has 8 decimals)
     /// @dev totalAssets is 18-decimal, price is 8-decimal → divide by 1e18
     function totalValueUSD() external view returns (uint256) {
-        (int256 price, ) = getLatestPrice();
+        (int256 price,) = getLatestPrice();
         return (totalAssets() * uint256(price)) / 1e18;
     }
 
-    //  ERC-4626 overrides 
+    //  ERC-4626 overrides
 
     /// @inheritdoc ERC4626
     /// @dev OZ ERC4626 already handles CEI correctly; nonReentrant adds extra safety
-    function deposit(uint256 assets, address receiver)
-    public
-    override
-    nonReentrant
-    returns (uint256)
-    {
+    function deposit(uint256 assets, address receiver) public override nonReentrant returns (uint256) {
         return super.deposit(assets, receiver);
     }
 
     /// @inheritdoc ERC4626
-    function withdraw(uint256 assets, address receiver, address owner_)
-    public
-    override
-    nonReentrant
-    returns (uint256)
-    {
+    function withdraw(uint256 assets, address receiver, address owner_) public override nonReentrant returns (uint256) {
         return super.withdraw(assets, receiver, owner_);
     }
 
     /// @inheritdoc ERC4626
-    function mint(uint256 shares, address receiver)
-    public
-    override
-    nonReentrant
-    returns (uint256)
-    {
+    function mint(uint256 shares, address receiver) public override nonReentrant returns (uint256) {
         return super.mint(shares, receiver);
     }
 
     /// @inheritdoc ERC4626
-    function redeem(uint256 shares, address receiver, address owner_)
-    public
-    override
-    nonReentrant
-    returns (uint256)
-    {
+    function redeem(uint256 shares, address receiver, address owner_) public override nonReentrant returns (uint256) {
         return super.redeem(shares, receiver, owner_);
     }
 }

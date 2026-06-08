@@ -36,24 +36,20 @@ contract GameItems is Initializable, ERC1155Upgradeable, AccessControlUpgradeabl
     }
 
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts)
-    virtual
-    external
-    onlyRole(MINTER_ROLE)
+        external
+        virtual
+        onlyRole(MINTER_ROLE)
     {
         _mintBatch(to, ids, amounts, "");
     }
 
-    function _authorizeUpgrade(address newImplementation)
-    internal
-    override
-    onlyRole(UPGRADER_ROLE)
-    {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 
     function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(ERC1155Upgradeable, AccessControlUpgradeable)
-    returns (bool)
+        public
+        view
+        override(ERC1155Upgradeable, AccessControlUpgradeable)
+        returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }

@@ -9,12 +9,12 @@ import "../src/GameToken.sol";
 
 contract NFTRentalVaultTest is Test {
     NFTRentalVault vault;
-    GameItems      items;
-    GameToken      token;
+    GameItems items;
+    GameToken token;
 
     address owner = address(0xA);
     address alice = address(0xB);
-    address bob   = address(0xC);
+    address bob = address(0xC);
 
     function setUp() public {
         vm.prank(owner);
@@ -31,7 +31,7 @@ contract NFTRentalVaultTest is Test {
         vm.prank(owner);
         token.mint(alice, 10_000e18);
         vm.prank(owner);
-        token.mint(bob,   10_000e18);
+        token.mint(bob, 10_000e18);
 
         // FIX: cache constants BEFORE prank
         uint256 swordId = items.SWORD();
@@ -46,20 +46,19 @@ contract NFTRentalVaultTest is Test {
         token.approve(address(vault), type(uint256).max);
     }
 
-    //  listItem 
+    //  listItem
 
     function test_listItem_basic() public {
         uint256 swordId = items.SWORD();
         vm.prank(alice);
         uint256 listingId = vault.listItem(swordId, 2, 100e18);
 
-        (address listedOwner, uint256 itemId, uint256 amount, uint256 price, bool active) =
-                            vault.listings(listingId);
+        (address listedOwner, uint256 itemId, uint256 amount, uint256 price, bool active) = vault.listings(listingId);
 
         assertEq(listedOwner, alice);
         assertEq(itemId, swordId);
         assertEq(amount, 2);
-        assertEq(price,  100e18);
+        assertEq(price, 100e18);
         assertTrue(active);
         assertEq(items.balanceOf(address(vault), swordId), 2);
     }
@@ -78,7 +77,7 @@ contract NFTRentalVaultTest is Test {
         vault.listItem(swordId, 1, 0);
     }
 
-    //  rentItem 
+    //  rentItem
 
     function test_rentItem_basic() public {
         uint256 swordId = items.SWORD();
@@ -89,7 +88,7 @@ contract NFTRentalVaultTest is Test {
         vm.prank(bob);
         uint256 rentalId = vault.rentItem(listingId, 3);
 
-        (address renter, uint256 lId, , uint256 endTime, bool active) = vault.rentals(rentalId);
+        (address renter, uint256 lId,, uint256 endTime, bool active) = vault.rentals(rentalId);
         assertEq(renter, bob);
         assertEq(lId, listingId);
         assertTrue(active);
@@ -148,7 +147,7 @@ contract NFTRentalVaultTest is Test {
         vault.rentItem(listingId, 1);
     }
 
-    //  endRental 
+    //  endRental
 
     function test_endRental_basic() public {
         uint256 swordId = items.SWORD();
@@ -160,8 +159,8 @@ contract NFTRentalVaultTest is Test {
         vm.warp(block.timestamp + 1 days + 1);
         vault.endRental(rentalId);
 
-        (, , , , bool rentalActive) = vault.rentals(rentalId);
-        (, , , , bool listingActive) = vault.listings(listingId);
+        (,,,, bool rentalActive) = vault.rentals(rentalId);
+        (,,,, bool listingActive) = vault.listings(listingId);
         assertFalse(rentalActive);
         assertTrue(listingActive);
     }
@@ -189,7 +188,7 @@ contract NFTRentalVaultTest is Test {
         vault.endRental(rentalId);
     }
 
-    //  delistItem 
+    //  delistItem
 
     function test_delistItem_basic() public {
         uint256 swordId = items.SWORD();
@@ -201,7 +200,7 @@ contract NFTRentalVaultTest is Test {
         vault.delistItem(listingId);
 
         assertEq(items.balanceOf(alice, swordId), balBefore + 2);
-        (, , , , bool active) = vault.listings(listingId);
+        (,,,, bool active) = vault.listings(listingId);
         assertFalse(active);
     }
 
@@ -214,7 +213,7 @@ contract NFTRentalVaultTest is Test {
         vault.delistItem(listingId);
     }
 
-    //  Admin 
+    //  Admin
 
     function test_setPlatformFee() public {
         vm.prank(owner);
@@ -241,11 +240,11 @@ contract NFTRentalVaultTest is Test {
         assertGt(token.balanceOf(owner), ownerBalBefore);
     }
 
-    //  Fuzz 
+    //  Fuzz
 
     function testFuzz_rentalCost(uint256 pricePerDay, uint256 durationDays) public {
         durationDays = bound(durationDays, 1, 7);
-        pricePerDay  = bound(pricePerDay, 1e15, 100e18);
+        pricePerDay = bound(pricePerDay, 1e15, 100e18);
 
         uint256 shieldId = items.SHIELD();
         vm.prank(owner);

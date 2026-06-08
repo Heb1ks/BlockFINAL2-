@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/mocks/MockERC20.sol";
 
-
 contract VulnerableAMM {
     IERC20 public tokenA;
     IERC20 public tokenB;
@@ -41,9 +40,9 @@ contract ReentrancyAttacker {
     uint256 constant MAX_ATTACKS = 3;
 
     constructor(address _amm, address _tokenA, address _tokenB) {
-        target   = VulnerableAMM(_amm);
-        tokenA   = IERC20(_tokenA);
-        tokenB   = IERC20(_tokenB);
+        target = VulnerableAMM(_amm);
+        tokenA = IERC20(_tokenA);
+        tokenB = IERC20(_tokenB);
     }
 
     function attack(uint256 amountIn) external {
@@ -104,9 +103,7 @@ interface ITokenReceiverHook {
 }
 
 contract HookableMockERC20 is MockERC20 {
-    constructor(string memory name_, string memory symbol_, uint8 decimals_)
-    MockERC20(name_, symbol_, decimals_)
-    {}
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) MockERC20(name_, symbol_, decimals_) {}
 
     function transfer(address to, uint256 amount) public override returns (bool) {
         bool ok = super.transfer(to, amount);
@@ -117,14 +114,13 @@ contract HookableMockERC20 is MockERC20 {
     }
 }
 
-
 contract VulnerableToken {
     mapping(address => uint256) public balanceOf;
     uint256 public totalSupply;
 
     function mint(address to, uint256 amount) external {
         balanceOf[to] += amount;
-        totalSupply    += amount;
+        totalSupply += amount;
     }
 }
 
@@ -134,7 +130,9 @@ contract FixedToken {
     uint256 public totalSupply;
     address public owner;
 
-    constructor() { owner = msg.sender; }
+    constructor() {
+        owner = msg.sender;
+    }
 
     modifier onlyOwner() {
         require(msg.sender == owner, "FixedToken: caller is not owner");
@@ -143,7 +141,7 @@ contract FixedToken {
 
     function mint(address to, uint256 amount) external onlyOwner {
         balanceOf[to] += amount;
-        totalSupply    += amount;
+        totalSupply += amount;
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
@@ -153,15 +151,13 @@ contract FixedToken {
 
 //  TEST SUITE
 contract SecurityCaseStudiesTest is Test {
-
-    //  actors 
-    address alice   = address(0xA1);
-    address bob     = address(0xB0);
+    //  actors
+    address alice = address(0xA1);
+    address bob = address(0xB0);
     address attacker = address(0xAA);
 
     MockERC20 tokenA;
     MockERC20 tokenB;
-
 
     function test_reentrancy_BEFORE_vulnerable_pattern() public {
         tokenA = new MockERC20("TokenA", "TKA", 18);
@@ -226,9 +222,7 @@ contract SecurityCaseStudiesTest is Test {
         vm.stopPrank();
     }
 
-
     //  REENTRANCY — AFTER (fixed with CEI + nonReentrant)
-
 
     /// @notice Fixed AMM correctly processes an honest swap.
     function test_reentrancy_AFTER_honest_swap_works() public {
@@ -281,9 +275,7 @@ contract SecurityCaseStudiesTest is Test {
         reentrant.attack(100e18);
     }
 
-
     //  ACCESS CONTROL — BEFORE (anyone can mint)
-
 
     /// @notice Any address can mint from VulnerableToken — proves the bug.
     function test_accessControl_BEFORE_anyone_can_mint() public {
@@ -293,10 +285,8 @@ contract SecurityCaseStudiesTest is Test {
         vm.prank(attacker);
         vtoken.mint(attacker, 1_000_000_000e18);
 
-        assertEq(vtoken.balanceOf(attacker), 1_000_000_000e18,
-            "Attacker should hold minted tokens");
-        assertEq(vtoken.totalSupply(), 1_000_000_000e18,
-            "Total supply inflated by attacker");
+        assertEq(vtoken.balanceOf(attacker), 1_000_000_000e18, "Attacker should hold minted tokens");
+        assertEq(vtoken.totalSupply(), 1_000_000_000e18, "Total supply inflated by attacker");
     }
 
     /// @notice Even random addresses (not deployer) can mint — proves no guard.
@@ -309,9 +299,7 @@ contract SecurityCaseStudiesTest is Test {
         assertEq(vtoken.balanceOf(rando), 999e18);
     }
 
-
     //  ACCESS CONTROL — AFTER (only owner can mint)
-
 
     /// @notice Owner can mint — expected functionality.
     function test_accessControl_AFTER_owner_can_mint() public {
@@ -379,17 +367,16 @@ contract SecurityCaseStudiesTest is Test {
     }
 }
 
-
 //  Helper — contract that attempts to re-enter FixedAMM.swap()
 
 contract ReentrantCaller {
     FixedAMM public amm;
-    IERC20   public tokenA;
-    IERC20   public tokenB;
-    bool     private attacking;
+    IERC20 public tokenA;
+    IERC20 public tokenB;
+    bool private attacking;
 
     constructor(address _amm, address _tokenA, address _tokenB) {
-        amm    = FixedAMM(_amm);
+        amm = FixedAMM(_amm);
         tokenA = IERC20(_tokenA);
         tokenB = IERC20(_tokenB);
     }
@@ -411,6 +398,4 @@ contract ReentrantCaller {
             amm.swap(1e18);
         }
     }
-
-
 }
