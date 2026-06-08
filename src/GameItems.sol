@@ -31,22 +31,19 @@ contract GameItems is Initializable, ERC1155Upgradeable, AccessControlUpgradeabl
         _grantRole(UPGRADER_ROLE, admin);
     }
 
-    function mint(address to, uint256 id, uint256 amount) external onlyRole(MINTER_ROLE) {
+    function mint(address to, uint256 id, uint256 amount) external virtual onlyRole(MINTER_ROLE) {
         _mint(to, id, amount, "");
     }
 
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts)
         external
+        virtual
         onlyRole(MINTER_ROLE)
     {
         _mintBatch(to, ids, amounts, "");
     }
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 
     function supportsInterface(bytes4 interfaceId)
         public

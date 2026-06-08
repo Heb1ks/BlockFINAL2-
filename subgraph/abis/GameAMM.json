@@ -1,0 +1,5 @@
+[
+  {"type":"event","name":"Swap","inputs":[{"name":"user","type":"address","indexed":true},{"name":"amountIn","type":"uint256","indexed":false},{"name":"amountOut","type":"uint256","indexed":false},{"name":"aToB","type":"bool","indexed":false}],"anonymous":false},
+  {"type":"event","name":"LiquidityAdded","inputs":[{"name":"user","type":"address","indexed":true},{"name":"amountA","type":"uint256","indexed":false},{"name":"amountB","type":"uint256","indexed":false},{"name":"shares","type":"uint256","indexed":false}],"anonymous":false},
+  {"type":"event","name":"LiquidityRemoved","inputs":[{"name":"user","type":"address","indexed":true},{"name":"amountA","type":"uint256","indexed":false},{"name":"amountB","type":"uint256","indexed":false},{"name":"shares","type":"uint256","indexed":false}],"anonymous":false}
+]

@@ -1,0 +1,4 @@
+[
+  {"type":"event","name":"LootRequested","inputs":[{"name":"requestId","type":"uint256","indexed":true},{"name":"player","type":"address","indexed":true}],"anonymous":false},
+  {"type":"event","name":"LootFulfilled","inputs":[{"name":"requestId","type":"uint256","indexed":true},{"name":"player","type":"address","indexed":true},{"name":"itemId","type":"uint256","indexed":false},{"name":"dropped","type":"bool","indexed":false}],"anonymous":false}
+]

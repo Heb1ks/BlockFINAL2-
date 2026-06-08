@@ -45,27 +45,24 @@ contract NFTRentalVault is ERC1155Holder, ReentrancyGuard, Ownable {
     event RentalEnded(uint256 indexed rentalId);
     event Delisted(uint256 indexed listingId);
 
-    constructor(address _gameItems, address _gameToken, address _owner)
-        Ownable(_owner)
-    {
+    constructor(address _gameItems, address _gameToken, address _owner) Ownable(_owner) {
         GAME_ITEMS = IERC1155(_gameItems);
         GAME_TOKEN = IERC20(_gameToken);
     }
 
-    function listItem(uint256 itemId, uint256 amount, uint256 pricePerDay) external nonReentrant returns (uint256 listingId) {
+    function listItem(uint256 itemId, uint256 amount, uint256 pricePerDay)
+        external
+        nonReentrant
+        returns (uint256 listingId)
+    {
         require(amount > 0, "Zero amount");
         require(pricePerDay > 0, "Zero price");
 
         GAME_ITEMS.safeTransferFrom(msg.sender, address(this), itemId, amount, "");
 
         listingId = listingCount++;
-        listings[listingId] = Listing({
-            owner: msg.sender,
-            itemId: itemId,
-            amount: amount,
-            pricePerDay: pricePerDay,
-            active: true
-        });
+        listings[listingId] =
+            Listing({owner: msg.sender, itemId: itemId, amount: amount, pricePerDay: pricePerDay, active: true});
 
         emit Listed(listingId, msg.sender, itemId, pricePerDay);
     }

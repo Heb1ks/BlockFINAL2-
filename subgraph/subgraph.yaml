@@ -1,0 +1,137 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+
+dataSources:
+  - kind: ethereum
+    name: GameToken
+    network: arbitrum-sepolia
+    source:
+      address: "0x924C3De70B818Eff9E9f9420E7549337f76799EC"
+      abi: GameToken
+      startBlock: 265000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenTransfer
+      abis:
+        - name: GameToken
+          file: ./abis/GameToken.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mappings.ts
+
+  #  GameAMM 
+  - kind: ethereum
+    name: GameAMM
+    network: arbitrum-sepolia
+    source:
+      address: "0x9D6BdA08801c0FDAA34f321B3091A2c5b8d59733"
+      abi: GameAMM
+      startBlock: 265000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Swap
+        - LiquidityEvent
+        - AMMPool
+      abis:
+        - name: GameAMM
+          file: ./abis/GameAMM.json
+      eventHandlers:
+        - event: Swap(indexed address,uint256,uint256,bool)
+          handler: handleSwap
+        - event: LiquidityAdded(indexed address,uint256,uint256,uint256)
+          handler: handleLiquidityAdded
+        - event: LiquidityRemoved(indexed address,uint256,uint256,uint256)
+          handler: handleLiquidityRemoved
+      file: ./src/mappings.ts
+
+  #  NFTRentalVault 
+  - kind: ethereum
+    name: NFTRentalVault
+    network: arbitrum-sepolia
+    source:
+      address: "0xD6E0bbE7bfB997fB15D5f6C5182d5552390db3c7"
+      abi: NFTRentalVault
+      startBlock: 265000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Listing
+        - Rental
+      abis:
+        - name: NFTRentalVault
+          file: ./abis/NFTRentalVault.json
+      eventHandlers:
+        - event: ItemListed(indexed uint256,indexed address,uint256,uint256,uint256)
+          handler: handleItemListed
+        - event: ItemRented(indexed uint256,indexed uint256,indexed address,uint256)
+          handler: handleItemRented
+        - event: RentalEnded(indexed uint256,indexed uint256)
+          handler: handleRentalEnded
+        - event: ItemDelisted(indexed uint256)
+          handler: handleItemDelisted
+      file: ./src/mappings.ts
+
+  #  GameDAO 
+  - kind: ethereum
+    name: GameDAO
+    network: arbitrum-sepolia
+    source:
+      address: "0x8500fE560F12BBB92Dbeb4F2ed0f7d65CfFF1490"
+      abi: GameDAO
+      startBlock: 265000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Proposal
+        - Vote
+      abis:
+        - name: GameDAO
+          file: ./abis/GameDAO.json
+      eventHandlers:
+        - event: ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)
+          handler: handleProposalCreated
+        - event: VoteCast(indexed address,uint256,uint8,uint256,string)
+          handler: handleVoteCast
+        - event: ProposalQueued(uint256,uint256)
+          handler: handleProposalQueued
+        - event: ProposalExecuted(uint256)
+          handler: handleProposalExecuted
+        - event: ProposalCanceled(uint256)
+          handler: handleProposalCanceled
+      file: ./src/mappings.ts
+
+  #  LootDrop 
+  - kind: ethereum
+    name: LootDrop
+    network: arbitrum-sepolia
+    source:
+      address: "0x6A1b40A8615bb2daD7362c716360a391d3305782"
+      abi: LootDrop
+      startBlock: 265000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - LootRequest
+      abis:
+        - name: LootDrop
+          file: ./abis/LootDrop.json
+      eventHandlers:
+        - event: LootRequested(indexed uint256,indexed address)
+          handler: handleLootRequested
+        - event: LootFulfilled(indexed uint256,indexed address,uint256,bool)
+          handler: handleLootFulfilled
+      file: ./src/mappings.ts

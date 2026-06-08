@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
-import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 import "./GameItems.sol";
 
-contract LootDrop is VRFConsumerBaseV2, Ownable {
-    VRFCoordinatorV2Interface public immutable COORDINATOR;
+contract LootDrop is VRFConsumerBaseV2Plus {
     GameItems public immutable GAME_ITEMS;
 
     bytes32 public keyHash;
-    uint64 public subscriptionId;
+    uint256 public subscriptionId;
     uint16 public constant REQUEST_CONFIRMATIONS = 3;
     uint32 public constant CALLBACK_GAS_LIMIT = 200000;
     uint32 public constant NUM_WORDS = 1;
@@ -29,28 +27,33 @@ contract LootDrop is VRFConsumerBaseV2, Ownable {
         address _vrfCoordinator,
         address _gameItems,
         bytes32 _keyHash,
-        uint64 _subscriptionId,
-        address _owner
-    ) VRFConsumerBaseV2(_vrfCoordinator) Ownable(_owner) {
-        COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
+        uint256 _subscriptionId
+    )
+    VRFConsumerBaseV2Plus(_vrfCoordinator)
+    {
         GAME_ITEMS = GameItems(_gameItems);
         keyHash = _keyHash;
         subscriptionId = _subscriptionId;
     }
 
     function requestLoot() external returns (uint256 requestId) {
-        requestId = COORDINATOR.requestRandomWords(
-            keyHash,
-            subscriptionId,
-            REQUEST_CONFIRMATIONS,
-            CALLBACK_GAS_LIMIT,
-            NUM_WORDS
+        requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: keyHash,
+                subId: subscriptionId,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: CALLBACK_GAS_LIMIT,
+                numWords: NUM_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({ nativePayment: false })
+                )
+            })
         );
         requestToPlayer[requestId] = msg.sender;
         emit LootRequested(requestId, msg.sender);
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         address player = requestToPlayer[requestId];
         uint256 rand = randomWords[0];
 

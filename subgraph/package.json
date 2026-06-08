@@ -1,0 +1,14 @@
+{
+  "name": "gamefi-subgraph",
+  "version": "1.0.0",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build":   "graph build",
+    "deploy":  "graph deploy --studio gamefi-protocol",
+    "create":  "graph create --node https://api.studio.thegraph.com/deploy/ gamefi-protocol"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.71.0",
+    "@graphprotocol/graph-ts":  "^0.35.1"
+  }
+}

@@ -1,0 +1,6 @@
+[
+  {"type":"event","name":"ItemListed","inputs":[{"name":"listingId","type":"uint256","indexed":true},{"name":"owner","type":"address","indexed":true},{"name":"itemId","type":"uint256","indexed":false},{"name":"amount","type":"uint256","indexed":false},{"name":"pricePerDay","type":"uint256","indexed":false}],"anonymous":false},
+  {"type":"event","name":"ItemRented","inputs":[{"name":"rentalId","type":"uint256","indexed":true},{"name":"listingId","type":"uint256","indexed":true},{"name":"renter","type":"address","indexed":true},{"name":"endTime","type":"uint256","indexed":false}],"anonymous":false},
+  {"type":"event","name":"RentalEnded","inputs":[{"name":"rentalId","type":"uint256","indexed":true},{"name":"listingId","type":"uint256","indexed":true}],"anonymous":false},
+  {"type":"event","name":"ItemDelisted","inputs":[{"name":"listingId","type":"uint256","indexed":true}],"anonymous":false}
+]

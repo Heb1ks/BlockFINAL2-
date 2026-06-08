@@ -1,0 +1,119 @@
+#  GameToken 
+
+type TokenTransfer @entity(immutable: true) {
+  id: Bytes!
+  from: Bytes!
+  to: Bytes!
+  value: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+#  GameAMM 
+
+type Swap @entity(immutable: true) {
+  id: Bytes!
+  user: Bytes!
+  amountIn: BigInt!
+  amountOut: BigInt!
+  aToB: Boolean!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type LiquidityEvent @entity(immutable: true) {
+  id: Bytes!
+  user: Bytes!
+  amountA: BigInt!
+  amountB: BigInt!
+  shares: BigInt!
+  isAdd: Boolean!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type AMMPool @entity(immutable: false) {
+  id: Bytes!
+  totalVolumeA: BigInt!
+  totalVolumeB: BigInt!
+  swapCount: BigInt!
+  liquidityProviderCount: BigInt!
+}
+
+#  NFTRentalVault 
+
+type Listing @entity(immutable: false) {
+  id: String!
+  owner: Bytes!
+  itemId: BigInt!
+  amount: BigInt!
+  pricePerDay: BigInt!
+  active: Boolean!
+  createdAt: BigInt!
+  rentals: [Rental!]! @derivedFrom(field: "listing")
+}
+
+type Rental @entity(immutable: false) {
+  id: String!
+  listing: Listing!
+  renter: Bytes!
+  startTime: BigInt!
+  endTime: BigInt!
+  active: Boolean!
+  transactionHash: Bytes!
+}
+
+#  GameDAO 
+
+type Proposal @entity(immutable: false) {
+  id: String!
+  proposalId: BigInt!
+  proposer: Bytes!
+  description: String!
+  startBlock: BigInt!
+  endBlock: BigInt!
+  forVotes: BigInt!
+  againstVotes: BigInt!
+  abstainVotes: BigInt!
+  state: String!
+  createdAt: BigInt!
+  votes: [Vote!]! @derivedFrom(field: "proposal")
+  transactionHash: Bytes!
+}
+
+type Vote @entity(immutable: true) {
+  id: Bytes!
+  proposal: Proposal!
+  voter: Bytes!
+  support: Int!
+  weight: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+#  LootDrop 
+
+type LootRequest @entity(immutable: false) {
+  id: String!
+  requestId: BigInt!
+  player: Bytes!
+  fulfilled: Boolean!
+  itemId: BigInt
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+#  GameVault 
+
+type VaultDeposit @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes!
+  owner: Bytes!
+  assets: BigInt!
+  shares: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}

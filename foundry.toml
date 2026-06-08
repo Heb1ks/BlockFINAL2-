@@ -1,9 +1,29 @@
 [profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
+src      = "src"
+out      = "out"
+libs     = ["lib"]
+optimizer        = true
+optimizer_runs   = 200
+via_ir           = true
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
     "@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/"
 ]
+
+# Test configuration
+fuzz_runs       = 256
+invariant_runs  = 64
+invariant_depth = 15
+
+[profile.ci]
+fuzz_runs       = 1000
+invariant_runs  = 256
+invariant_depth = 30
+
+[rpc_endpoints]
+mainnet          = "${MAINNET_RPC_URL}"
+arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
+
+[etherscan]
+arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=421614" }
