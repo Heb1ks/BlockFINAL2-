@@ -150,13 +150,13 @@ contract Deploy is Script {
     function _step8_lootdrop() internal {
         address vrfCoord = vm.envOr("VRF_COORDINATOR", address(0));
         bytes32 keyHash = vm.envOr("VRF_KEY_HASH", bytes32(0));
-        uint64 subId = uint64(vm.envOr("VRF_SUBSCRIPTION_ID", uint256(1)));
+        uint256 subId = vm.envOr("VRF_SUBSCRIPTION_ID", uint256(1));
 
         if (vrfCoord == address(0)) {
             console.log("[8] VRF_COORDINATOR not set - skipping LootDrop");
             return;
         }
-        lootDrop = new LootDrop(vrfCoord, gameItemsProxy, keyHash, subId, deployer);
+        lootDrop = new LootDrop(vrfCoord, gameItemsProxy, keyHash, subId);
         console.log("[8] LootDrop:", address(lootDrop));
     }
 

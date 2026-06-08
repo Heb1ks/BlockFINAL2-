@@ -1,15 +1,12 @@
 const ADDRESSES = {
-    gameToken:  "0x585532d8Ad4C2CA67d02319B7E70e7B02a5e4d58",
-    gameAMM:    "0x44A3bf9fcd1DF0475227413bD1c8961d67a2a86a ",
-    gameVault:  "0x27AD56ECe1CF4ACaCA314087a5C3010dFFa9ECda",
-    gameDAO:    "0x4A95Bd1f7f48C80d47c0899CcB89957A465A893F",
+    gameToken:  "0x924C3De70B818Eff9E9f9420E7549337f76799EC",
+    gameAMM:    "0x9D6BdA08801c0FDAA34f321B3091A2c5b8d59733",
+    gameVault:  "0x07FA70449CF0dB5806CbCf99fe4a104E9007d7E1",
+    gameDAO:    "0x8500fE560F12BBB92Dbeb4F2ed0f7d65CfFF1490",
 }
 
-// do not forget
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.5"
-
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.8"
 const ARBITRUM_SEPOLIA_CHAIN_ID = 421614n
-
 
 const ERC20_ABI = [
     "function balanceOf(address) view returns (uint256)",
@@ -39,64 +36,68 @@ const VAULT_ABI = [
     "function totalAssets() view returns (uint256)",
     "function totalSupply() view returns (uint256)",
 ]
+
 const DAO_ABI = [
     "function castVote(uint256 proposalId, uint8 support) returns (uint256)",
     "function hasVoted(uint256 proposalId, address account) view returns (bool)",
 ]
 
-
-let provider = null
-let signer   = null
+let provider    = null
+let signer      = null
 let userAddress = null
-let swapAtoB = true
+let swapAtoB    = true
 
 const contracts = {}
 
+// ─── Wallet Connection ────────────────────────────────────────────────────────
 
 async function connectWallet() {
-    if (!window.ethereum) {
-        alert("MetaMask not found! Please install it from https://metamask.io")
-        return
-    }
-
     try {
-        provider = new ethers.BrowserProvider(window.ethereum)
-        await provider.send("eth_requestAccounts", [])
-        signer = await provider.getSigner()
-        userAddress = await signer.getAddress()
-        window._userAddress = userAddress
-
-        // Update UI
-        document.getElementById("connectBtn").style.display = "none"
-        const wi = document.getElementById("walletInfo")
-        wi.textContent = userAddress.slice(0, 6) + "..." + userAddress.slice(-4)
-        wi.classList.add("visible")
-
-        // Check network
-        await checkNetwork()
-
-        // Init contracts
-        contracts.token = new ethers.Contract(ADDRESSES.gameToken, VOTES_ABI, signer)
-        contracts.amm   = new ethers.Contract(ADDRESSES.gameAMM,   AMM_ABI,   signer)
-        contracts.vault = new ethers.Contract(ADDRESSES.gameVault, VAULT_ABI, signer)
-        contracts.dao   = new ethers.Contract(ADDRESSES.gameDAO,   DAO_ABI,   signer)
-
-        // Load data
-        await refreshStats()
-        await loadSubgraphData()
-
-        // Listen for changes
-        window.ethereum.on("chainChanged",    () => window.location.reload())
-        window.ethereum.on("accountsChanged", () => window.location.reload())
-
+        const state = await WalletState.connect()
+        if (!state) return
+        await _onWalletReady(state)
     } catch (err) {
         console.error("Wallet connection failed:", err)
         alert("Connection failed: " + err.message)
     }
 }
 
+/**
+ * Shared setup run after wallet is connected (fresh or restored).
+ */
+async function _onWalletReady(state) {
+    provider    = state.provider
+    signer      = state.signer
+    userAddress = state.address
+    window._userAddress = userAddress
+
+    // Update UI
+    document.getElementById("connectBtn").style.display = "none"
+    const wi = document.getElementById("walletInfo")
+    wi.textContent = userAddress.slice(0, 6) + "..." + userAddress.slice(-4)
+    wi.classList.add("visible")
+
+    await checkNetwork()
+
+    // Init contracts
+    contracts.token = new ethers.Contract(ADDRESSES.gameToken, VOTES_ABI, signer)
+    contracts.amm   = new ethers.Contract(ADDRESSES.gameAMM,   AMM_ABI,   signer)
+    contracts.vault = new ethers.Contract(ADDRESSES.gameVault, VAULT_ABI, signer)
+    contracts.dao   = new ethers.Contract(ADDRESSES.gameDAO,   DAO_ABI,   signer)
+
+    // FIX BUG 1: load wallet data on entry
+    await refreshStats()
+    await loadSubgraphData()
+
+    window.ethereum.on("chainChanged",    () => window.location.reload())
+    window.ethereum.on("accountsChanged", () => {
+        WalletState.clear()
+        window.location.reload()
+    })
+}
+
 async function checkNetwork() {
-    const net = await provider.getNetwork()
+    const net     = await provider.getNetwork()
     const warning = document.getElementById("networkWarning")
     if (net.chainId !== ARBITRUM_SEPOLIA_CHAIN_ID) {
         warning.classList.add("visible")
@@ -112,22 +113,23 @@ async function switchNetwork() {
             params: [{ chainId: "0x66eee" }],
         })
     } catch (err) {
-        // Network not added yet — add it
         await window.ethereum.request({
             method: "wallet_addEthereumChain",
             params: [{
-                chainId: "0x66eee",
-                chainName: "Arbitrum Sepolia",
-                nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-                rpcUrls: ["https://sepolia-rollup.arbitrum.io/rpc"],
-                blockExplorerUrls: ["https://sepolia.arbiscan.io"],
+                chainId:            "0x66eee",
+                chainName:          "Arbitrum Sepolia",
+                nativeCurrency:     { name: "ETH", symbol: "ETH", decimals: 18 },
+                rpcUrls:            ["https://sepolia-rollup.arbitrum.io/rpc"],
+                blockExplorerUrls:  ["https://sepolia.arbiscan.io"],
             }],
         })
     }
 }
 
+// ─── FIX BUG 1: refreshStats reads live chain data ───────────────────────────
+
 async function refreshStats() {
-    if (!signer) return
+    if (!signer || !userAddress) return
 
     try {
         const [
@@ -150,20 +152,22 @@ async function refreshStats() {
             contracts.vault.totalSupply(),
         ])
 
-        setText("gameBalance",     fmt(balance)      + " GAME")
-        setText("votingPower",     fmt(votingPower)   + " GAME")
-        setText("delegate",        shortAddr(delegateTo))
-        setText("vaultShares",     fmt(vaultShares)   + " sGAME")
-        setText("lpBalance",       fmt(lpBalance)     + " GLP")
-        setText("reserveA",        fmt(reserves.rA)   + " GAME")
-        setText("reserveB",        fmt(reserves.rB)   + " RES")
-        setText("vaultAssets",     fmt(vaultAssets)   + " GAME")
-        setText("vaultTotalShares",fmt(vaultSupply)   + " sGAME")
+        setText("gameBalance",      fmt(balance)       + " GAME")
+        setText("votingPower",      fmt(votingPower)    + " GAME")
+        setText("delegate",         shortAddr(delegateTo))
+        setText("vaultShares",      fmt(vaultShares)    + " sGAME")
+        setText("lpBalance",        fmt(lpBalance)      + " GLP")
+        setText("reserveA",         fmt(reserves.rA)    + " GAME")
+        setText("reserveB",         fmt(reserves.rB)    + " RES")
+        setText("vaultAssets",      fmt(vaultAssets)    + " GAME")
+        setText("vaultTotalShares", fmt(vaultSupply)    + " sGAME")
 
     } catch (err) {
         console.error("refreshStats error:", err)
     }
 }
+
+// ─── Swap ─────────────────────────────────────────────────────────────────────
 
 function setSwapDir(aToB) {
     swapAtoB = aToB
@@ -186,13 +190,10 @@ async function doSwap() {
         const amtWei = ethers.parseEther(amtInput)
         const minWei = ethers.parseEther(minInput)
 
-        // Approve the token being sold
         setStatus(statusEl, "pending", "Step 1/2: Approving token...")
 
         let tokenAddr = ADDRESSES.gameToken
-        if (!swapAtoB) {
-            tokenAddr = await contracts.amm.TOKEN_B()
-        }
+        if (!swapAtoB) tokenAddr = await contracts.amm.TOKEN_B()
 
         const tokenContract = new ethers.Contract(tokenAddr, ERC20_ABI, signer)
         const allowance = await tokenContract.allowance(userAddress, ADDRESSES.gameAMM)
@@ -203,7 +204,6 @@ async function doSwap() {
             await approveTx.wait()
         }
 
-        // Swap
         setStatus(statusEl, "pending", "Step 2/2: Sending swap...")
         const tx = swapAtoB
             ? await contracts.amm.swapAtoB(amtWei, minWei)
@@ -211,16 +211,19 @@ async function doSwap() {
 
         setStatus(statusEl, "pending", "Pending: " + tx.hash.slice(0, 14) + "...")
         await tx.wait()
-        setStatus(statusEl, "success", " Swap confirmed! " + shortHash(tx.hash))
+        setStatus(statusEl, "success", "✅ Swap confirmed! " + shortHash(tx.hash))
 
+        // FIX BUG 1: refetch after tx
         await refreshStats()
-        // Reload subgraph after a few seconds (indexing delay)
         setTimeout(() => loadSubgraphData(), 4000)
 
     } catch (err) {
-        setStatus(statusEl, "error: "  + parseError(err))
+        // FIX BUG 1: correct 3-arg call
+        setStatus(statusEl, "error", parseError(err))
     }
 }
+
+// ─── Vault ───────────────────────────────────────────────────────────────────
 
 async function doDeposit() {
     const amtInput = document.getElementById("depositAmount").value
@@ -233,8 +236,7 @@ async function doDeposit() {
     const statusEl = document.getElementById("depositStatus")
 
     try {
-        const amtWei = ethers.parseEther(amtInput)
-
+        const amtWei    = ethers.parseEther(amtInput)
         setStatus(statusEl, "pending", "Step 1/2: Approving GAME...")
         const allowance = await contracts.token.allowance(userAddress, ADDRESSES.gameVault)
 
@@ -247,12 +249,13 @@ async function doDeposit() {
         const tx = await contracts.vault.deposit(amtWei, userAddress)
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
         await tx.wait()
-        setStatus(statusEl, "success", " Deposited successfully! " + shortHash(tx.hash))
+        setStatus(statusEl, "success", "✅ Deposited successfully! " + shortHash(tx.hash))
 
+        // FIX BUG 1: refetch after tx
         await refreshStats()
 
     } catch (err) {
-        setStatus(statusEl, "error: "  + parseError(err))
+        setStatus(statusEl, "error", parseError(err))
     }
 }
 
@@ -268,24 +271,25 @@ async function doRedeem() {
 
     try {
         const sharesWei = ethers.parseEther(sharesInput)
-
         setStatus(statusEl, "pending", "Redeeming shares...")
         const tx = await contracts.vault.redeem(sharesWei, userAddress, userAddress)
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
         await tx.wait()
-        setStatus(statusEl, "success", " Redeemed successfully! " + shortHash(tx.hash))
+        setStatus(statusEl, "success", "✅ Redeemed successfully! " + shortHash(tx.hash))
 
+        // FIX BUG 1: refetch after tx
         await refreshStats()
 
     } catch (err) {
-        setStatus(statusEl, "error: "  + parseError(err))
+        setStatus(statusEl, "error", parseError(err))
     }
 }
 
+// ─── Delegate ─────────────────────────────────────────────────────────────────
 
 async function doDelegate() {
-    const input = document.getElementById("delegateAddr").value.trim()
-    const target = input || userAddress  // empty = delegate to self
+    const input  = document.getElementById("delegateAddr").value.trim()
+    const target = input || userAddress
 
     const statusEl = document.getElementById("delegateStatus")
 
@@ -295,42 +299,55 @@ async function doDelegate() {
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
         await tx.wait()
         setStatus(statusEl, "success",
-            " Delegated to " + shortAddr(target) + " — " + shortHash(tx.hash))
+            "✅ Delegated to " + shortAddr(target) + " — " + shortHash(tx.hash))
 
+        // FIX BUG 1: refetch after delegate so Voting Power / Delegated To update
         await refreshStats()
 
     } catch (err) {
-        setStatus(statusEl, "error: "  + parseError(err))
+        setStatus(statusEl, "error", parseError(err))
     }
 }
 
+// ─── DAO Voting ───────────────────────────────────────────────────────────────
+
+async function castVote(proposalId, support) {
+    if (!signer) {
+        alert("Please connect your wallet first")
+        return
+    }
+    const statusEl = document.getElementById("voteStatus-" + proposalId)
+    if (!statusEl) return
+
+    try {
+        setStatus(statusEl, "pending", "Submitting vote...")
+        const tx = await contracts.dao.castVote(proposalId, support)
+        setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
+        await tx.wait()
+        setStatus(statusEl, "success", "✅ Vote cast! " + shortHash(tx.hash))
+        setTimeout(() => loadSubgraphData(), 4000)
+    } catch (err) {
+        setStatus(statusEl, "error", parseError(err))
+    }
+}
+
+// ─── Subgraph ─────────────────────────────────────────────────────────────────
+
 async function loadSubgraphData() {
-    await Promise.all([
-        loadProposals(),
-        loadRecentSwaps(),
-    ])
+    await Promise.all([loadProposals(), loadRecentSwaps()])
 }
 
 async function queryGraph(query, variables = {}) {
     try {
         const response = await fetch(SUBGRAPH_URL, {
-            method: "POST",
+            method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query, variables }),
+            body:    JSON.stringify({ query, variables }),
         })
-
-        if (!response.ok) {
-            throw new Error("HTTP " + response.status)
-        }
-
+        if (!response.ok) throw new Error("HTTP " + response.status)
         const json = await response.json()
-
-        if (json.errors && json.errors.length > 0) {
-            throw new Error(json.errors[0].message)
-        }
-
+        if (json.errors && json.errors.length > 0) throw new Error(json.errors[0].message)
         return json.data
-
     } catch (err) {
         console.warn("Subgraph query failed:", err.message)
         return null
@@ -344,38 +361,29 @@ async function loadProposals() {
 
     const data = await queryGraph(`{
     proposals(first: 10, orderBy: createdAt, orderDirection: desc) {
-      id
-      proposalId
-      proposer
-      description
-      state
-      forVotes
-      againstVotes
-      abstainVotes
-      createdAt
+      id proposalId proposer description state
+      forVotes againstVotes abstainVotes createdAt
     }
   }`)
 
     if (!data || !data.proposals) {
-        el.textContent = " Subgraph not deployed yet, or no proposals found."
+        el.textContent = "⚠️ Subgraph not deployed yet, or no proposals found."
         return
     }
-
     if (data.proposals.length === 0) {
         el.textContent = "No proposals yet. Create one via the DAO contract."
         return
     }
 
     el.className = ""
-
     el.innerHTML = data.proposals.map(p => {
         const forVotes     = BigInt(p.forVotes)
         const againstVotes = BigInt(p.againstVotes)
         const abstainVotes = BigInt(p.abstainVotes)
-        const total = forVotes + againstVotes + abstainVotes
-        const forPct = total > 0n ? Number(forVotes * 100n / total) : 0
-        const date = new Date(parseInt(p.createdAt) * 1000).toLocaleDateString()
-        const desc = p.description.length > 90
+        const total        = forVotes + againstVotes + abstainVotes
+        const forPct       = total > 0n ? Number(forVotes * 100n / total) : 0
+        const date         = new Date(parseInt(p.createdAt) * 1000).toLocaleDateString()
+        const desc         = p.description.length > 90
             ? p.description.slice(0, 90) + "..."
             : p.description
 
@@ -383,8 +391,7 @@ async function loadProposals() {
       <div class="proposal">
         <div class="proposal-desc">${escapeHtml(desc)}</div>
         <div class="proposal-meta">
-          <span>By ${shortAddr(p.proposer)}</span>
-          <span>·</span>
+          <span>By ${shortAddr(p.proposer)}</span><span>·</span>
           <span>${date}</span>
           <span class="state-badge state-${p.state}">${p.state}</span>
         </div>
@@ -392,20 +399,19 @@ async function loadProposals() {
           <div class="vote-bar-fill" style="width: ${forPct}%"></div>
         </div>
         <div class="vote-counts">
-          <span> For: ${fmtVotes(p.forVotes)}</span>
-          <span> Against: ${fmtVotes(p.againstVotes)}</span>
-          <span> Abstain: ${fmtVotes(p.abstainVotes)}</span>
+          <span>✅ For: ${fmtVotes(p.forVotes)}</span>
+          <span>❌ Against: ${fmtVotes(p.againstVotes)}</span>
+          <span>⬜ Abstain: ${fmtVotes(p.abstainVotes)}</span>
         </div>
-        ${p.state === 'Active' ? `
+        ${p.state === "Active" ? `
         <div class="vote-buttons">
           <button class="btn-vote btn-for"     onclick="castVote('${p.proposalId}', 1)">Vote For</button>
           <button class="btn-vote btn-against" onclick="castVote('${p.proposalId}', 0)">Vote Against</button>
           <button class="btn-vote btn-abstain" onclick="castVote('${p.proposalId}', 2)">Abstain</button>
         </div>
         <div id="voteStatus-${p.proposalId}" class="tx-status"></div>
-        ` : ''}
-      </div>
-    `
+        ` : ""}
+      </div>`
     }).join("")
 }
 
@@ -416,28 +422,20 @@ async function loadRecentSwaps() {
 
     const data = await queryGraph(`{
     swaps(first: 10, orderBy: timestamp, orderDirection: desc) {
-      id
-      user
-      amountIn
-      amountOut
-      aToB
-      timestamp
-      transactionHash
+      id user amountIn amountOut aToB timestamp transactionHash
     }
   }`)
 
     if (!data || !data.swaps) {
-        el.textContent = " Subgraph not deployed yet, or no swaps found."
+        el.textContent = "⚠️ Subgraph not deployed yet, or no swaps found."
         return
     }
-
     if (data.swaps.length === 0) {
         el.textContent = "No swaps yet. Try swapping some tokens above!"
         return
     }
 
     el.className = ""
-
     const rows = data.swaps.map(s => {
         const dir  = s.aToB ? "GAME → RES" : "RES → GAME"
         const time = new Date(parseInt(s.timestamp) * 1000).toLocaleTimeString()
@@ -447,67 +445,45 @@ async function loadRecentSwaps() {
         <span class="swap-amount">${fmt(s.amountIn)} → ${fmt(s.amountOut)}</span>
         <span class="swap-user">${shortAddr(s.user)}</span>
         <span class="swap-time">${time}</span>
-      </div>
-    `
+      </div>`
     }).join("")
 
     el.innerHTML = `<div class="swap-history">${rows}</div>`
 }
 
+// ─── Utils ────────────────────────────────────────────────────────────────────
 
-
-/**
- * Format a BigInt wei value to a human-readable number string.
- * Accepts both BigInt and string (from subgraph).
- */
 function fmt(wei) {
     const val = parseFloat(ethers.formatEther(wei.toString()))
     return val.toLocaleString(undefined, { maximumFractionDigits: 2 })
 }
 
-/**
- * Format vote counts (subgraph returns strings)
- */
 function fmtVotes(wei) {
     const val = parseFloat(ethers.formatEther(wei.toString()))
     if (val >= 1000) return (val / 1000).toFixed(1) + "k"
     return val.toFixed(0)
 }
 
-/**
- * Shorten a wallet address: 0x1234...abcd
- */
 function shortAddr(addr) {
     if (!addr || addr === "0x0000000000000000000000000000000000000000") return "—"
     return addr.slice(0, 6) + "..." + addr.slice(-4)
 }
 
-/**
- * Shorten a tx hash: 0x1234abcd...
- */
 function shortHash(hash) {
     return hash.slice(0, 10) + "..."
 }
 
-/**
- * Set text content of an element by ID
- */
 function setText(id, text) {
     const el = document.getElementById(id)
     if (el) el.textContent = text
 }
 
-/**
- * Set transaction status message with appropriate styling
- */
+// FIX BUG 1: correct signature — always (el, type, message)
 function setStatus(el, type, message) {
-    el.className = "tx-status " + type
+    el.className  = "tx-status " + type
     el.textContent = message
 }
 
-/**
- * Extract a readable error message from ethers errors
- */
 function parseError(err) {
     if (err.reason)       return err.reason
     if (err.shortMessage) return err.shortMessage
@@ -515,19 +491,27 @@ function parseError(err) {
     return "Unknown error"
 }
 
-/**
- * Escape HTML to prevent XSS from subgraph data
- */
 function escapeHtml(str) {
     return str
         .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+        .replace(/</g,  "&lt;")
+        .replace(/>/g,  "&gt;")
+        .replace(/"/g,  "&quot;")
 }
 
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 
-// Load subgraph data on page load (no wallet needed for read-only data)
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
+    // Always load public subgraph data immediately
     setTimeout(() => loadSubgraphData(), 500)
+
+    // FIX BUG 2: try to silently restore wallet connection from sessionStorage
+    try {
+        const state = await WalletState.tryRestore()
+        if (state) {
+            await _onWalletReady(state)
+        }
+    } catch (err) {
+        console.warn("Silent wallet restore failed:", err)
+    }
 })

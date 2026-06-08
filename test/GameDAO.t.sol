@@ -57,7 +57,7 @@ contract GameDAOTest is Test {
     //  Parameters
 
     function test_votingDelay_isOneDay() public view {
-        assertEq(dao.votingDelay(), VOTING_DELAY );
+        assertEq(dao.votingDelay(), VOTING_DELAY);
     }
 
     function test_votingPeriod_isOneWeek() public view {

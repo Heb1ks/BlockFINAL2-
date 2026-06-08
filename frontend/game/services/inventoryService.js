@@ -7,8 +7,8 @@
 import { ITEM_DEFS, CRAFTING_RECIPES, getMockInventory, mockCraft } from "./mockService.js"
 
 
-export const GAME_ITEMS_ADDRESS = "0xD9F25A49ea7fE5f8a6Fa38DAfeCD7113AA5D72C7"
-export const LOOT_DROP_ADDRESS  = "0x3E2543ee4ecF024e12ace9Ca12D4A9Fd3E0deAe0"
+export const GAME_ITEMS_ADDRESS = "0x2D3740Ec560e18F78501Fd04Ca71d996a956d084"
+export const LOOT_DROP_ADDRESS  = "0x6A1b40A8615bb2daD7362c716360a391d3305782"
 
 export const GAME_ITEMS_V2_ABI = [
     // ERC-1155 read

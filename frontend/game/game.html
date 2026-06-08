@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../styles.css" />
     <link rel="stylesheet" href="../game.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="../wallet-state.js"></script>
 </head>
 <body>
 
@@ -90,40 +91,39 @@
 
     // ─── Wallet Connection ─────────────────────────────────────────────────────
     window._userAddress = null
-    let _provider = null
 
+    async function _onWalletReady(signer, address, provider) {
+        window._userAddress = address
+
+        document.getElementById("connectBtn").style.display = "none"
+        const wi = document.getElementById("walletInfo")
+        wi.textContent = address.slice(0, 6) + "..." + address.slice(-4)
+        wi.classList.add("visible")
+
+        const net = await provider.getNetwork()
+        if (net.chainId !== 421614n)
+            document.getElementById("networkWarning").classList.add("visible")
+
+        initInventoryService(signer, address)
+
+        await Promise.all([
+            refreshInventory(address),
+            refreshCrafting(address),
+        ])
+
+        window.ethereum.on("chainChanged",    () => location.reload())
+        window.ethereum.on("accountsChanged", () => {
+            WalletState.clear()
+            location.reload()
+        })
+    }
+
+    // FIX BUG 2: connectWallet saves address so other pages can restore it
     window.connectWallet = async function () {
-        if (!window.ethereum) {
-            alert("MetaMask not found! Install from https://metamask.io")
-            return
-        }
         try {
-            _provider = new ethers.BrowserProvider(window.ethereum)
-            await _provider.send("eth_requestAccounts", [])
-            const signer  = await _provider.getSigner()
-            const address = await signer.getAddress()
-            window._userAddress = address
-
-            document.getElementById("connectBtn").style.display = "none"
-            const wi = document.getElementById("walletInfo")
-            wi.textContent = address.slice(0,6) + "..." + address.slice(-4)
-            wi.classList.add("visible")
-
-            const net = await _provider.getNetwork()
-            if (net.chainId !== 421614n)
-                document.getElementById("networkWarning").classList.add("visible")
-
-            // Init blockchain service with real signer
-            initInventoryService(signer, address)
-
-            // Refresh both panels with on-chain data
-            await Promise.all([
-                refreshInventory(address),
-                refreshCrafting(address),
-            ])
-
-            window.ethereum.on("chainChanged",    () => location.reload())
-            window.ethereum.on("accountsChanged", () => location.reload())
+            const state = await WalletState.connect()
+            if (!state) return
+            await _onWalletReady(state.signer, state.address, state.provider)
         } catch (err) {
             alert("Connection failed: " + err.message)
         }
@@ -198,11 +198,21 @@
         }, 5000)
     })
 
-    // ─── Bootstrap (mock data, no wallet needed) ───────────────────────────────
+    // ─── Bootstrap ────────────────────────────────────────────────────────────
     mountInventory(document.getElementById("inventory-mount"))
     mountCrafting(document.getElementById("crafting-mount"))
     await refreshInventory(null)
     await refreshCrafting(null)
+
+    // FIX BUG 2: silently restore wallet state when navigating from Dashboard
+    try {
+        const state = await WalletState.tryRestore()
+        if (state) {
+            await _onWalletReady(state.signer, state.address, state.provider)
+        }
+    } catch (err) {
+        console.warn("Silent wallet restore failed:", err)
+    }
 </script>
 
 </body>
