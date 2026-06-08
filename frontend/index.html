@@ -5,19 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GameFi Protocol</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="game.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 </head>
 <body>
 
 <!-- Network Warning -->
 <div id="networkWarning">
-    ⚠️ Wrong network! Please switch to <strong>Arbitrum Sepolia</strong> (Chain ID: 421614)
+     Wrong network! Please switch to <strong>Arbitrum Sepolia</strong> (Chain ID: 421614)
     <button class="btn-inline" onclick="switchNetwork()">Switch Network</button>
 </div>
 
 <!-- Header -->
 <header>
-    <h1>🎮 GameFi Protocol</h1>
+    <h1> GameFi Protocol</h1>
+    <nav class="game-nav">
+        <a href="index.html"      class="game-nav-link game-nav-link--active">Dashboard</a>
+        <a href="game/game.html"  class="game-nav-link">🎮 Inventory &amp; Craft</a>
+    </nav>
     <div class="header-right">
         <span id="walletInfo" class="wallet-info"></span>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
@@ -41,7 +46,7 @@
 
     <!-- Swap -->
     <div class="card">
-        <h2>🔄 Swap (AMM)</h2>
+        <h2> Swap (AMM)</h2>
         <div class="tab-bar">
             <button class="tab active" id="tabAtoB" onclick="setSwapDir(true)">GAME → RES</button>
             <button class="tab" id="tabBtoA" onclick="setSwapDir(false)">RES → GAME</button>
@@ -56,7 +61,7 @@
 
     <!-- Vault -->
     <div class="card">
-        <h2>🏦 Vault (ERC-4626)</h2>
+        <h2> Vault (ERC-4626)</h2>
         <div class="stat-row"><span class="label">Total Assets</span><span class="value" id="vaultAssets">—</span></div>
         <div class="stat-row"><span class="label">Total Shares</span><span class="value" id="vaultTotalShares">—</span></div>
 
@@ -77,7 +82,7 @@
 
     <!-- Delegate -->
     <div class="card">
-        <h2>🗳️ Delegate Votes</h2>
+        <h2>Delegate Votes</h2>
         <p class="hint-text">Delegate your voting power to participate in governance. Leave empty to delegate to yourself.</p>
         <label class="input-label">Delegate Address</label>
         <input id="delegateAddr" type="text" placeholder="0x... (leave empty = self)" />
@@ -88,7 +93,7 @@
     <!-- Proposals (full width) -->
     <div class="card full-width">
         <h2>
-            📋 DAO Proposals
+             DAO Proposals
             <span class="subgraph-badge">from The Graph</span>
         </h2>
         <div id="proposalsList" class="empty-state">Connect wallet to load proposals...</div>
@@ -97,7 +102,7 @@
     <!-- Recent Swaps (full width) -->
     <div class="card full-width">
         <h2>
-            📊 Recent Swaps
+            Recent Swaps
             <span class="subgraph-badge">from The Graph</span>
         </h2>
         <div id="swapHistory" class="empty-state">Connecting to subgraph...</div>

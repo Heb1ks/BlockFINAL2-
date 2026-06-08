@@ -25,7 +25,7 @@ contract GameDAO is
     )
     Governor("GameDAO")
     GovernorSettings(
-    1 days,       // voting delay
+    5 minutes,       // voting delay
     1 weeks,      // voting period
     1_000e18      // proposal threshold — 1% of the 100 000 GAME initial mint
     )

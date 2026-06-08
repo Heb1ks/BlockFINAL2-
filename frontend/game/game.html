@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameFi — Inventory & Crafting</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../game.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Network Warning -->
+<div id="networkWarning">
+    ⚠️ Wrong network! Please switch to <strong>Arbitrum Sepolia</strong> (Chain ID: 421614)
+    <button class="btn-inline" onclick="switchNetwork()">Switch Network</button>
+</div>
+
+<!-- Header -->
+<header>
+    <h1>🎮 GameFi Protocol</h1>
+    <nav class="game-nav">
+        <a href="../index.html" class="game-nav-link">Dashboard</a>
+        <a href="game.html"    class="game-nav-link game-nav-link--active">🎮 Game</a>
+    </nav>
+    <div class="header-right">
+        <span id="walletInfo" class="wallet-info"></span>
+        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+</header>
+
+<!-- Game Page -->
+<div class="game-page">
+
+    <!-- Tab Bar -->
+    <div class="game-tab-bar">
+        <button class="game-tab game-tab--active" id="tab-inventory" onclick="switchTab('inventory')">
+            🎒 Inventory
+        </button>
+        <button class="game-tab" id="tab-crafting" onclick="switchTab('crafting')">
+            ⚒️ Crafting
+        </button>
+        <button class="game-tab" id="tab-loot" onclick="switchTab('loot')">
+            🎁 Loot Drop
+        </button>
+    </div>
+
+    <!-- Tab: Inventory -->
+    <div class="game-tab-content" id="content-inventory">
+        <div id="inventory-mount"></div>
+    </div>
+
+    <!-- Tab: Crafting -->
+    <div class="game-tab-content game-tab-content--hidden" id="content-crafting">
+        <div id="crafting-mount"></div>
+    </div>
+
+    <!-- Tab: Loot -->
+    <div class="game-tab-content game-tab-content--hidden" id="content-loot">
+        <div class="loot-page">
+            <div class="loot-card">
+                <div class="loot-header">
+                    <h2>🎁 VRF Loot Drop</h2>
+                    <p class="loot-sub">Powered by Chainlink VRF · Arbitrum Sepolia</p>
+                </div>
+                <div class="loot-visual">
+                    <div class="loot-orb" id="loot-orb">?</div>
+                </div>
+                <div class="loot-info">
+                    <div class="loot-stat"><span>Drop Rate</span><strong>50%</strong></div>
+                    <div class="loot-stat"><span>Possible Items</span><strong>⚔️ 🛡️ 🧪 🪖 🔮</strong></div>
+                    <div class="loot-stat"><span>Source</span><strong>Chainlink VRF</strong></div>
+                </div>
+                <button class="loot-btn" id="loot-request-btn">🎲 Request Loot Drop</button>
+                <div class="tx-status" id="loot-status" style="margin-top:12px"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    // ─── Import game modules ───────────────────────────────────────────────────
+    import { initInventoryService, fetchInventory, requestLootDrop, ITEM_DEFS }
+        from "./services/inventoryService.js"
+    import { mountInventory, refreshInventory }
+        from "./components/inventory/Inventory.js"
+    import { mountCrafting, refreshCrafting }
+        from "./components/crafting/Crafting.js"
+
+    // ─── Wallet Connection ─────────────────────────────────────────────────────
+    window._userAddress = null
+    let _provider = null
+
+    window.connectWallet = async function () {
+        if (!window.ethereum) {
+            alert("MetaMask not found! Install from https://metamask.io")
+            return
+        }
+        try {
+            _provider = new ethers.BrowserProvider(window.ethereum)
+            await _provider.send("eth_requestAccounts", [])
+            const signer  = await _provider.getSigner()
+            const address = await signer.getAddress()
+            window._userAddress = address
+
+            document.getElementById("connectBtn").style.display = "none"
+            const wi = document.getElementById("walletInfo")
+            wi.textContent = address.slice(0,6) + "..." + address.slice(-4)
+            wi.classList.add("visible")
+
+            const net = await _provider.getNetwork()
+            if (net.chainId !== 421614n)
+                document.getElementById("networkWarning").classList.add("visible")
+
+            // Init blockchain service with real signer
+            initInventoryService(signer, address)
+
+            // Refresh both panels with on-chain data
+            await Promise.all([
+                refreshInventory(address),
+                refreshCrafting(address),
+            ])
+
+            window.ethereum.on("chainChanged",    () => location.reload())
+            window.ethereum.on("accountsChanged", () => location.reload())
+        } catch (err) {
+            alert("Connection failed: " + err.message)
+        }
+    }
+
+    window.switchNetwork = async function () {
+        try {
+            await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0x66eee" }],
+            })
+        } catch {
+            await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: "0x66eee",
+                    chainName: "Arbitrum Sepolia",
+                    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+                    rpcUrls: ["https://sepolia-rollup.arbitrum.io/rpc"],
+                    blockExplorerUrls: ["https://sepolia.arbiscan.io"],
+                }],
+            })
+        }
+    }
+
+    // ─── Tab Switching ─────────────────────────────────────────────────────────
+    window.switchTab = function (tab) {
+        ;["inventory", "crafting", "loot"].forEach(t => {
+            document.getElementById(`content-${t}`)
+                .classList.toggle("game-tab-content--hidden", t !== tab)
+            document.getElementById(`tab-${t}`)
+                .classList.toggle("game-tab--active", t === tab)
+        })
+    }
+
+    // ─── Loot Drop ─────────────────────────────────────────────────────────────
+    const lootBtn    = document.getElementById("loot-request-btn")
+    const lootStatus = document.getElementById("loot-status")
+    const lootOrb    = document.getElementById("loot-orb")
+
+    lootBtn.addEventListener("click", async () => {
+        lootBtn.disabled = true
+        lootOrb.textContent = "?"
+        lootOrb.classList.add("loot-orb--spinning")
+        lootOrb.classList.remove("loot-orb--won")
+        lootStatus.className = "tx-status"
+        lootStatus.textContent = ""
+
+        try {
+            const result = await requestLootDrop((type, msg) => {
+                lootStatus.className = `tx-status ${type}`
+                lootStatus.textContent = msg
+            })
+            lootOrb.classList.remove("loot-orb--spinning")
+            if (result?.won !== false) {
+                lootOrb.classList.add("loot-orb--won")
+                if (result?.itemId !== undefined)
+                    lootOrb.textContent = ITEM_DEFS[result.itemId]?.emoji || "🎁"
+                await refreshInventory(window._userAddress)
+            } else {
+                lootOrb.textContent = "💨"
+            }
+        } catch {
+            lootOrb.classList.remove("loot-orb--spinning")
+            lootOrb.textContent = "💨"
+        }
+
+        lootBtn.disabled = false
+        setTimeout(() => {
+            lootOrb.textContent = "?"
+            lootOrb.classList.remove("loot-orb--won")
+        }, 5000)
+    })
+
+    // ─── Bootstrap (mock data, no wallet needed) ───────────────────────────────
+    mountInventory(document.getElementById("inventory-mount"))
+    mountCrafting(document.getElementById("crafting-mount"))
+    await refreshInventory(null)
+    await refreshCrafting(null)
+</script>
+
+</body>
+</html>

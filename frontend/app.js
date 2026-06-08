@@ -52,7 +52,7 @@ let swapAtoB = true
 
 const contracts = {}
 
-// ─── Wallet Connection ──────────────────────────────────────────────────────
+
 async function connectWallet() {
     if (!window.ethereum) {
         alert("MetaMask not found! Please install it from https://metamask.io")
@@ -64,6 +64,7 @@ async function connectWallet() {
         await provider.send("eth_requestAccounts", [])
         signer = await provider.getSigner()
         userAddress = await signer.getAddress()
+        window._userAddress = userAddress
 
         // Update UI
         document.getElementById("connectBtn").style.display = "none"
@@ -125,7 +126,6 @@ async function switchNetwork() {
     }
 }
 
-// ─── Stats ──────────────────────────────────────────────────────────────────
 async function refreshStats() {
     if (!signer) return
 
@@ -165,7 +165,6 @@ async function refreshStats() {
     }
 }
 
-// ─── Swap ────────────────────────────────────────────────────────────────────
 function setSwapDir(aToB) {
     swapAtoB = aToB
     document.getElementById("tabAtoB").classList.toggle("active", aToB)
@@ -212,18 +211,17 @@ async function doSwap() {
 
         setStatus(statusEl, "pending", "Pending: " + tx.hash.slice(0, 14) + "...")
         await tx.wait()
-        setStatus(statusEl, "success", "✅ Swap confirmed! " + shortHash(tx.hash))
+        setStatus(statusEl, "success", " Swap confirmed! " + shortHash(tx.hash))
 
         await refreshStats()
         // Reload subgraph after a few seconds (indexing delay)
         setTimeout(() => loadSubgraphData(), 4000)
 
     } catch (err) {
-        setStatus(statusEl, "error", "❌ " + parseError(err))
+        setStatus(statusEl, "error: "  + parseError(err))
     }
 }
 
-// ─── Vault ───────────────────────────────────────────────────────────────────
 async function doDeposit() {
     const amtInput = document.getElementById("depositAmount").value
 
@@ -249,12 +247,12 @@ async function doDeposit() {
         const tx = await contracts.vault.deposit(amtWei, userAddress)
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
         await tx.wait()
-        setStatus(statusEl, "success", "✅ Deposited successfully! " + shortHash(tx.hash))
+        setStatus(statusEl, "success", " Deposited successfully! " + shortHash(tx.hash))
 
         await refreshStats()
 
     } catch (err) {
-        setStatus(statusEl, "error", "❌ " + parseError(err))
+        setStatus(statusEl, "error: "  + parseError(err))
     }
 }
 
@@ -275,16 +273,16 @@ async function doRedeem() {
         const tx = await contracts.vault.redeem(sharesWei, userAddress, userAddress)
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
         await tx.wait()
-        setStatus(statusEl, "success", "✅ Redeemed successfully! " + shortHash(tx.hash))
+        setStatus(statusEl, "success", " Redeemed successfully! " + shortHash(tx.hash))
 
         await refreshStats()
 
     } catch (err) {
-        setStatus(statusEl, "error", "❌ " + parseError(err))
+        setStatus(statusEl, "error: "  + parseError(err))
     }
 }
 
-// ─── Delegate ─────────────────────────────────────────────────────────────────
+
 async function doDelegate() {
     const input = document.getElementById("delegateAddr").value.trim()
     const target = input || userAddress  // empty = delegate to self
@@ -297,16 +295,15 @@ async function doDelegate() {
         setStatus(statusEl, "pending", "Pending: " + shortHash(tx.hash))
         await tx.wait()
         setStatus(statusEl, "success",
-            "✅ Delegated to " + shortAddr(target) + " — " + shortHash(tx.hash))
+            " Delegated to " + shortAddr(target) + " — " + shortHash(tx.hash))
 
         await refreshStats()
 
     } catch (err) {
-        setStatus(statusEl, "error", "❌ " + parseError(err))
+        setStatus(statusEl, "error: "  + parseError(err))
     }
 }
 
-// ─── The Graph ────────────────────────────────────────────────────────────────
 async function loadSubgraphData() {
     await Promise.all([
         loadProposals(),
@@ -360,7 +357,7 @@ async function loadProposals() {
   }`)
 
     if (!data || !data.proposals) {
-        el.textContent = "⚠️ Subgraph not deployed yet, or no proposals found."
+        el.textContent = " Subgraph not deployed yet, or no proposals found."
         return
     }
 
@@ -395,15 +392,15 @@ async function loadProposals() {
           <div class="vote-bar-fill" style="width: ${forPct}%"></div>
         </div>
         <div class="vote-counts">
-          <span>✅ For: ${fmtVotes(p.forVotes)}</span>
-          <span>❌ Against: ${fmtVotes(p.againstVotes)}</span>
-          <span>⬜ Abstain: ${fmtVotes(p.abstainVotes)}</span>
+          <span> For: ${fmtVotes(p.forVotes)}</span>
+          <span> Against: ${fmtVotes(p.againstVotes)}</span>
+          <span> Abstain: ${fmtVotes(p.abstainVotes)}</span>
         </div>
         ${p.state === 'Active' ? `
         <div class="vote-buttons">
-          <button class="btn-vote btn-for"     onclick="castVote('${p.proposalId}', 1)">✅ Vote For</button>
-          <button class="btn-vote btn-against" onclick="castVote('${p.proposalId}', 0)">❌ Vote Against</button>
-          <button class="btn-vote btn-abstain" onclick="castVote('${p.proposalId}', 2)">⬜ Abstain</button>
+          <button class="btn-vote btn-for"     onclick="castVote('${p.proposalId}', 1)">Vote For</button>
+          <button class="btn-vote btn-against" onclick="castVote('${p.proposalId}', 0)">Vote Against</button>
+          <button class="btn-vote btn-abstain" onclick="castVote('${p.proposalId}', 2)">Abstain</button>
         </div>
         <div id="voteStatus-${p.proposalId}" class="tx-status"></div>
         ` : ''}
@@ -430,7 +427,7 @@ async function loadRecentSwaps() {
   }`)
 
     if (!data || !data.swaps) {
-        el.textContent = "⚠️ Subgraph not deployed yet, or no swaps found."
+        el.textContent = " Subgraph not deployed yet, or no swaps found."
         return
     }
 
@@ -457,7 +454,7 @@ async function loadRecentSwaps() {
     el.innerHTML = `<div class="swap-history">${rows}</div>`
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 
 /**
  * Format a BigInt wei value to a human-readable number string.
@@ -529,7 +526,7 @@ function escapeHtml(str) {
         .replace(/"/g, "&quot;")
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+
 // Load subgraph data on page load (no wallet needed for read-only data)
 window.addEventListener("load", () => {
     setTimeout(() => loadSubgraphData(), 500)
