@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../src/GameToken.sol";
-import "../src/GameItems.sol";
+import "../src/GameItemsV2.sol";
 import "../src/GameAMM.sol";
 import "../src/GameVault.sol";
 import "../src/GameDAO.sol";
@@ -98,12 +98,12 @@ contract Deploy is Script {
     }
 
     function _step2_items() internal {
-        GameItems impl = new GameItems();
-        bytes memory d = abi.encodeCall(GameItems.initialize, (deployer));
+        GameItemsV2 impl = new GameItemsV2();
+        bytes memory d = abi.encodeCall(GameItemsV2.initialize, (deployer));
         ERC1967Proxy px = new ERC1967Proxy(address(impl), d);
         gameItemsProxy = address(px);
-        console.log("[2] GameItems proxy:", gameItemsProxy);
-        console.log("[2] GameItems impl: ", address(impl));
+        console.log("[2] GameItemsV2 proxy:", gameItemsProxy);
+        console.log("[2] GameItemsV2 impl: ", address(impl));
     }
 
     function _step3_factory() internal {
@@ -162,7 +162,7 @@ contract Deploy is Script {
     }
 
     function _step9_postSetup() internal {
-        GameItems items = GameItems(gameItemsProxy);
+        GameItemsV2 items = GameItemsV2(gameItemsProxy);
 
         if (address(lootDrop) != address(0)) {
             items.grantRole(items.MINTER_ROLE(), address(lootDrop));
@@ -183,7 +183,7 @@ contract Deploy is Script {
 
     // FIX BUG 2: Setup crafting - enable crafting and register recipes
     function _step10_setupCrafting() internal {
-        GameItems items = GameItems(gameItemsProxy);
+        GameItemsV2 items = GameItemsV2(gameItemsProxy);
 
         // Enable crafting
         items.setCraftingEnabled(true);
@@ -246,16 +246,16 @@ contract Deploy is Script {
 
     function _printSummary() internal view {
         console.log("\n========== DEPLOYMENT SUMMARY ==========");
-        console.log("GameToken:         ", address(gameToken));
-        console.log("GameItems (proxy): ", gameItemsProxy);
-        console.log("GameFactory:       ", address(gameFactory));
-        console.log("TimelockController:", address(timelock));
-        console.log("GameDAO:           ", address(gameDAO));
-        console.log("GameAMM:           ", address(gameAMM));
-        console.log("GameVault:         ", address(gameVault));
-        console.log("NFTRentalVault:    ", address(rentalVault));
+        console.log("GameToken:          ", address(gameToken));
+        console.log("GameItemsV2 (proxy):", gameItemsProxy);
+        console.log("GameFactory:        ", address(gameFactory));
+        console.log("TimelockController: ", address(timelock));
+        console.log("GameDAO:            ", address(gameDAO));
+        console.log("GameAMM:            ", address(gameAMM));
+        console.log("GameVault:          ", address(gameVault));
+        console.log("NFTRentalVault:     ", address(rentalVault));
         if (address(lootDrop) != address(0)) {
-            console.log("LootDrop:          ", address(lootDrop));
+            console.log("LootDrop:           ", address(lootDrop));
         }
         console.log("==================");
     }
@@ -267,8 +267,9 @@ contract Deploy is Script {
         require(rentalVault.owner() == address(timelock), "FAIL: rental owner != timelock");
         require(timelock.getMinDelay() == TIMELOCK_DELAY, "FAIL: wrong timelock delay");
 
-        GameItems items = GameItems(gameItemsProxy);
+        GameItemsV2 items = GameItemsV2(gameItemsProxy);
         require(items.hasRole(items.DEFAULT_ADMIN_ROLE(), address(timelock)), "FAIL: timelock missing items admin role");
+        require(items.craftingEnabled(), "FAIL: crafting not enabled");
 
         console.log("\n[checks] All post-deploy assertions passed!");
     }
