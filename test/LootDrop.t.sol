@@ -27,7 +27,7 @@ contract LootDropTest is Test {
         vrf = new MockVRFCoordinator();
 
         vm.prank(owner);
-        lootDrop = new LootDrop(address(vrf), address(items), KEY_HASH, SUB_ID, owner);
+        lootDrop = new LootDrop(address(vrf), address(items), KEY_HASH, SUB_ID);
 
         // FIX: cache role hash BEFORE prank to avoid prank being consumed
         bytes32 minterRole = items.MINTER_ROLE();

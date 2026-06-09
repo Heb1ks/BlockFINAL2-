@@ -231,7 +231,7 @@ async function doExecuteCraft(recipe) {
     if (btn) { btn.disabled = false; btn.textContent = "⚒️ Craft Now" }
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+
 
 async function loadInventoryMap() {
     const items = await fetchInventory(window._userAddress || null)
