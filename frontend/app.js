@@ -1,11 +1,11 @@
 const ADDRESSES = {
-    gameToken:  "0x924C3De70B818Eff9E9f9420E7549337f76799EC",
-    gameAMM:    "0x9D6BdA08801c0FDAA34f321B3091A2c5b8d59733",
-    gameVault:  "0x07FA70449CF0dB5806CbCf99fe4a104E9007d7E1",
-    gameDAO:    "0x8500fE560F12BBB92Dbeb4F2ed0f7d65CfFF1490",
+    gameToken:  "0x9fE600443Cff4Caac17573261eEEf334De403950",
+    gameAMM:    "0xA028714ffBCaf6d7795cB00bda9e91CA38878742",
+    gameVault:  "0xD9E09cC96BfE56Ad970f6FA97db6acfba433540A",
+    gameDAO:    "0x7e6115E25fdB254810Bbe843df605658456D7b14",
 }
 
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.8"
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1753408/gamefi-protocol/v0.0.10"
 const ARBITRUM_SEPOLIA_CHAIN_ID = 421614n
 
 const ERC20_ABI = [

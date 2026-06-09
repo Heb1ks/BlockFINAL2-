@@ -23,13 +23,8 @@ contract LootDrop is VRFConsumerBaseV2Plus {
     event LootDropped(uint256 indexed requestId, address indexed player, uint256 itemId);
     event LootMissed(uint256 indexed requestId, address indexed player);
 
-    constructor(
-        address _vrfCoordinator,
-        address _gameItems,
-        bytes32 _keyHash,
-        uint256 _subscriptionId
-    )
-    VRFConsumerBaseV2Plus(_vrfCoordinator)
+    constructor(address _vrfCoordinator, address _gameItems, bytes32 _keyHash, uint256 _subscriptionId)
+        VRFConsumerBaseV2Plus(_vrfCoordinator)
     {
         GAME_ITEMS = GameItems(_gameItems);
         keyHash = _keyHash;
@@ -44,9 +39,7 @@ contract LootDrop is VRFConsumerBaseV2Plus {
                 requestConfirmations: REQUEST_CONFIRMATIONS,
                 callbackGasLimit: CALLBACK_GAS_LIMIT,
                 numWords: NUM_WORDS,
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({ nativePayment: false })
-                )
+                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
             })
         );
         requestToPlayer[requestId] = msg.sender;

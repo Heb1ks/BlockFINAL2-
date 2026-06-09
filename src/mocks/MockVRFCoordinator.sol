@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
-/// @title MockVRFCoordinator — test double for Chainlink VRF Coordinator V2
+/// @title MockVRFCoordinator — test double for Chainlink VRF Coordinator V2Plus
 contract MockVRFCoordinator {
     uint256 private _nonce;
 
     event RandomWordsRequested(uint256 requestId, address requester);
 
+    /// @dev Matches IVRFCoordinatorV2Plus — takes a single struct, not 5 args
     function requestRandomWords(
-        bytes32, // keyHash
-        uint64, // subId
-        uint16, // confirmations
-        uint32, // callbackGasLimit
-        uint32 // numWords
+        VRFV2PlusClient.RandomWordsRequest calldata /* req */
     )
         external
         returns (uint256 requestId)
@@ -23,8 +21,9 @@ contract MockVRFCoordinator {
         emit RandomWordsRequested(requestId, msg.sender);
     }
 
-    /// @notice Called by tests to simulate VRF callback
+    /// @notice Called by tests to simulate a VRF callback
     function fulfillRandomWords(address consumer, uint256 requestId, uint256[] memory randomWords) external {
-        VRFConsumerBaseV2(consumer).rawFulfillRandomWords(requestId, randomWords);
+        // Must use VRFConsumerBaseV2Plus, not V2, so the coordinator check passes
+        VRFConsumerBaseV2Plus(consumer).rawFulfillRandomWords(requestId, randomWords);
     }
 }

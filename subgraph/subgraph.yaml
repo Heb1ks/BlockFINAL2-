@@ -7,9 +7,9 @@ dataSources:
     name: GameToken
     network: arbitrum-sepolia
     source:
-      address: "0x924C3De70B818Eff9E9f9420E7549337f76799EC"
+      address: "0x9fE600443Cff4Caac17573261eEEf334De403950"
       abi: GameToken
-      startBlock: 265000000
+      startBlock: 272000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -29,9 +29,9 @@ dataSources:
     name: GameAMM
     network: arbitrum-sepolia
     source:
-      address: "0x9D6BdA08801c0FDAA34f321B3091A2c5b8d59733"
+      address: "0xA028714ffBCaf6d7795cB00bda9e91CA38878742"
       abi: GameAMM
-      startBlock: 265000000
+      startBlock: 272000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -57,9 +57,9 @@ dataSources:
     name: NFTRentalVault
     network: arbitrum-sepolia
     source:
-      address: "0xD6E0bbE7bfB997fB15D5f6C5182d5552390db3c7"
+      address: "0xfeE9741bbeb524e52e1ecEae0e30B3f6aFB81662"
       abi: NFTRentalVault
-      startBlock: 265000000
+      startBlock: 272000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -86,9 +86,9 @@ dataSources:
     name: GameDAO
     network: arbitrum-sepolia
     source:
-      address: "0x8500fE560F12BBB92Dbeb4F2ed0f7d65CfFF1490"
+      address: "0x7e6115E25fdB254810Bbe843df605658456D7b14"
       abi: GameDAO
-      startBlock: 265000000
+      startBlock: 272000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -117,9 +117,9 @@ dataSources:
     name: LootDrop
     network: arbitrum-sepolia
     source:
-      address: "0x6A1b40A8615bb2daD7362c716360a391d3305782"
+      address: "0xF801480aa4F8951a600014B9f62BD85192415Df5"
       abi: LootDrop
-      startBlock: 265000000
+      startBlock: 272000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
