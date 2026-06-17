@@ -43,25 +43,25 @@ All admin power is controlled by a 2-day Timelock, eliminating single points of 
 ┌─────────────────────────────────────────────────────────────────┐
 │                        GameFi Protocol                          │
 │                                                                 │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐  │
-│  │  GameToken   │    │  GameItems   │    │    GameVault     │  │
-│  │  ERC20Votes  │    │  ERC-1155    │    │    ERC-4626      │  │
-│  │  ERC20Permit │    │  UUPS Proxy  │    │  Chainlink Feed  │  │
-│  └──────┬───────┘    └──────┬───────┘    └────────┬─────────┘  │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐   │
+│  │  GameToken   │    │  GameItems   │    │    GameVault     │   │
+│  │  ERC20Votes  │    │  ERC-1155    │    │    ERC-4626      │   │
+│  │  ERC20Permit │    │  UUPS Proxy  │    │  Chainlink Feed  │   │
+│  └──────┬───────┘    └──────┬───────┘    └────────┬─────────┘   │
 │         │                  │                      │             │
-│  ┌──────▼───────┐    ┌──────▼───────┐    ┌────────▼─────────┐  │
-│  │   GameDAO    │    │  NFTRental   │    │     GameAMM      │  │
-│  │  Governor    │    │    Vault     │    │   x*y=k + Yul    │  │
-│  │  Timelock    │    │              │    │    LP tokens     │  │
-│  └──────────────┘    └──────────────┘    └──────────────────┘  │
+│  ┌──────▼───────┐    ┌──────▼───────┐    ┌────────▼─────────┐   │
+│  │   GameDAO    │    │  NFTRental   │    │     GameAMM      │   │
+│  │  Governor    │    │    Vault     │    │   x*y=k + Yul    │   │
+│  │  Timelock    │    │              │    │    LP tokens     │   │
+│  └──────────────┘    └──────────────┘    └──────────────────┘   │
 │                                                                 │
-│  ┌──────────────┐    ┌──────────────┐                          │
-│  │  LootDrop    │    │ GameFactory  │                          │
-│  │ Chainlink VRF│    │CREATE+CREATE2│                          │
-│  └──────────────┘    └──────────────┘                          │
+│  ┌──────────────┐    ┌──────────────┐                           │
+│  │  LootDrop    │    │ GameFactory  │                           │
+│  │ Chainlink VRF│    │CREATE+CREATE2│                           │
+│  └──────────────┘    └──────────────┘                           │
 │                                                                 │
-│  External: Chainlink VRF · Chainlink Price Feed · The Graph    │
-│  Network:  Arbitrum Sepolia (L2)                               │
+│  External: Chainlink VRF · Chainlink Price Feed · The Graph     │
+│  Network:  Arbitrum Sepolia (L2)                                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
